@@ -1,4 +1,4 @@
-
+3
 import { getStore } from "@netlify/blobs";
 
 const PASS = "2026";      // كلمة مرور المعلمات
@@ -96,3 +96,4 @@ export default async (req) => {
 
 export const config = { path: "/api" };
 المحتوى من إنشاء المستخدمين وغير موثق.
+
