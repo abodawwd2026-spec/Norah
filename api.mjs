@@ -1,4 +1,3 @@
-3
 import { getStore } from "@netlify/blobs";
 
 const PASS = "2026";      // كلمة مرور المعلمات
