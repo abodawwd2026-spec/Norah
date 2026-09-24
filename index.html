@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>منصة خطة الأسبوع</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#eef2f6; --surface:#ffffff; --ink:#18222e; --muted:#5d6b7a; --line:#d5dde6;
+  --navy:#1f5f99; --navy-soft:#dce8f4; --warn:#f4b400; --warn-soft:#fff4d1; --ok:#2e7d4f; --danger:#b3261e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10161d; --surface:#18212b; --ink:#e7edf3; --muted:#9aa8b6; --line:#2c3947;
+  --navy:#6aa8e0; --navy-soft:#1c2e42; --warn-soft:#3a3113;
+}}
+:root[data-theme="dark"]{--bg:#10161d; --surface:#18212b; --ink:#e7edf3; --muted:#9aa8b6; --line:#2c3947; --navy:#6aa8e0; --navy-soft:#1c2e42; --warn-soft:#3a3113;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",Tahoma,"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.5}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1100px;margin:auto;padding:.6rem 1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.brand{font-weight:800;font-size:1.05rem;margin-inline-end:auto}
+.role{font-size:.85rem;padding:.15rem .6rem;border-radius:999px;background:var(--navy-soft);color:var(--navy);font-weight:700}
+.tabs{max-width:1100px;margin:auto;padding:0 1rem;display:flex;gap:.25rem;overflow-x:auto}
+.tab{border:0;background:none;padding:.6rem .9rem;border-bottom:3px solid transparent;color:var(--muted);font-weight:700;white-space:nowrap;position:relative}
+.tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--navy)}
+.badge{display:inline-block;min-width:1.3rem;padding:0 .35rem;border-radius:999px;background:var(--danger);color:#fff;font-size:.75rem;line-height:1.3rem;text-align:center;margin-inline-start:.3rem}
+main{max-width:1100px;margin:auto;padding:1rem}
+.btn{border:1px solid var(--line);background:var(--surface);padding:.45rem .9rem;border-radius:8px;font-weight:700}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0d1620}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#0d1620}}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;align-items:center}
+.hint{color:var(--muted);font-size:.9rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem;margin-bottom:1rem}
+.panel h2{margin:0 0 .6rem;font-size:1.1rem}
+.hidden{display:none!important}
+.msg{padding:2rem 1rem;text-align:center;color:var(--muted)}
+
+/* ===== The printed sheet (always paper-white) ===== */
+.sheet-wrap{overflow:hidden;margin:0 auto}
+.sheet-scale{transform-origin:top right;width:794px}
+.sheet{width:794px;background:#fff;color:#111;padding:22px 26px 18px;font-family:"Tajawal",Tahoma,Arial,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.18);direction:rtl}
+.sheet .frame{border:1px solid #222;padding:6px 8px 4px}
+.sheet .hd{display:grid;grid-template-columns:110px 1fr 110px;align-items:center}
+.sheet .logo{height:70px;display:flex;align-items:center;justify-content:center}
+.sheet .logo img{max-height:64px;max-width:105px}
+.sheet .logo.empty{border:1px dashed #bbb;color:#999;font-size:10px}
+.sheet .hdc{text-align:center;font-weight:800;font-size:9.5px;line-height:1.9}
+.sheet .boxes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:4px 30px 6px}
+.sheet .box{border:1px solid #222;font-size:9.5px;font-weight:800;line-height:1.6;padding:4px 6px;text-align:center;white-space:pre-line}
+.sheet .banner{display:grid;grid-template-columns:1fr 225px;gap:8px;margin:8px 0 6px}
+.sheet .bmain,.sheet .bval{background:#2a6aa8;color:#fff;font-weight:800;border-radius:0 0 0 22px;padding:9px 14px;box-shadow:inset 0 -4px 0 #1b4d80}
+.sheet .bmain{font-size:17px;border-radius:0 0 0 30px}
+.sheet .bval{font-size:15px;text-align:center;border-radius:0 0 30px 0}
+.sheet table{width:94%;margin:0 auto;border-collapse:collapse;table-layout:fixed}
+.sheet th{background:#dfe6ef;border:1px solid #444;font-size:13px;font-weight:800;padding:4px 2px}
+.sheet td{border:1px solid #9aa4b0;font-size:10.5px;font-weight:700;text-align:center;padding:3px 4px;height:24px;line-height:1.35;vertical-align:middle;word-wrap:break-word}
+.sheet td.day{background:#dde9f6;font-size:15px;font-weight:800;color:#1c2f4a;border:1px solid #444;line-height:1.7}
+.sheet td.per{color:#6b86b8;font-size:9.5px}
+.sheet tr.first td{border-top:2.5px solid #222}
+.sheet td.les,.sheet td.hw,.sheet td.sub{white-space:pre-line}
+.sheet td.edit{cursor:pointer}
+.sheet td.edit:hover{background:#f0f6fd}
+.sheet td.chg{background:#fff1bf!important;box-shadow:inset 0 0 0 2px #f4b400}
+.sheet td.mine{background:#f2f8ff}
+.sheet.exporting td.chg,.sheet.exporting td.mine{background:transparent!important;box-shadow:none!important}
+.sheet .ft{display:flex;justify-content:space-around;font-size:11px;font-weight:800;margin-top:10px}
+
+/* ===== lists ===== */
+.day-group{margin-bottom:1rem}
+.day-group h3{margin:.2rem 0 .5rem;font-size:1rem;color:var(--navy)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem;margin-bottom:.5rem;display:grid;grid-template-columns:1fr auto;gap:.2rem .8rem;align-items:start}
+.card .meta{font-size:.85rem;color:var(--muted)}
+.card .val{white-space:pre-line}
+.card .empty{color:var(--muted);font-style:italic}
+.log-item{border-inline-start:4px solid var(--line)}
+.log-item.unseen{border-inline-start-color:var(--warn);background:var(--warn-soft)}
+.diff{font-size:.9rem;margin-top:.2rem}
+.diff del{color:var(--danger)}
+.diff ins{color:var(--ok);text-decoration:none;font-weight:700}
+.pick{display:grid;gap:.5rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.pick button{text-align:start;padding:.8rem;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.pick small{display:block;color:var(--muted)}
+
+/* ===== forms ===== */
+label.f{display:block;margin-bottom:.6rem;font-weight:700;font-size:.9rem}
+label.f input,label.f textarea,label.f select{display:block;width:100%;margin-top:.25rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:500}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 .8rem}
+.t-row{border:1px solid var(--line);border-radius:10px;padding:.7rem;margin-bottom:.6rem}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0}
+.chips label{border:1px solid var(--line);border-radius:999px;padding:.15rem .6rem;font-size:.85rem;display:flex;gap:.3rem;align-items:center}
+dialog{border:0;border-radius:14px;padding:0;width:min(560px,94vw);background:var(--surface);color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(10,20,30,.45)}
+.dlg-h{padding:.9rem 1rem;border-bottom:1px solid var(--line);font-weight:800}
+.dlg-b{padding:1rem}
+.dlg-f{padding:.8rem 1rem;border-top:1px solid var(--line);display:flex;gap:.5rem;justify-content:flex-start}
+.toast{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:.55rem 1rem;border-radius:8px;font-weight:700;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.gate{max-width:420px;margin:3rem auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.5rem}
+.gate h1{margin:0 0 .3rem;font-size:1.3rem}
+.gate .err{color:var(--danger);font-weight:700;min-height:1.5em}
+#exportHost{position:fixed;left:-10000px;top:0}
+
+@media print{
+  @page{size:A4;margin:6mm}
+  body{background:#fff}
+  .top,.actions,.no-print,dialog,.toast{display:none!important}
+  main{padding:0;max-width:none}
+  section{display:none!important}
+  #view-plan{display:block!important}
+  .sheet-wrap{height:auto!important;overflow:visible}
+  .sheet-scale{transform:none!important}
+  .sheet{box-shadow:none;padding:0}
+  .sheet td.chg,.sheet td.mine{background:transparent!important;box-shadow:none!important}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">منصة خطة الأسبوع</div>
+    <span class="role" id="roleTag">…</span>
+    <button class="btn hidden" id="btnSwitch">تبديل المستخدم</button>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-v="plan" aria-selected="true">الخطة</button>
+    <button class="tab" role="tab" data-v="mine">حصصي</button>
+    <button class="tab hidden" role="tab" data-v="log" id="tabLog">التعديلات<span class="badge hidden" id="logBadge">0</span></button>
+    <button class="tab hidden" role="tab" data-v="settings" id="tabSettings">الإعدادات والمعلمات</button>
+  </nav>
+</header>
+
+<main>
+  <div id="loading" class="msg hidden">جارٍ تحميل الخطة…</div>
+  <div id="gate" class="gate hidden">
+    <h1>منصة خطة الأسبوع</h1>
+    <div id="gatePass">
+      <label class="f">كلمة المرور<input id="pw" type="password" inputmode="numeric" autocomplete="current-password"></label>
+      <div class="err" id="pwErr"></div>
+      <button class="btn primary" id="pwGo">دخول</button>
+    </div>
+    <div id="gateWho" class="hidden">
+      <p>من أنتِ؟</p>
+      <div class="pick" id="whoList"></div>
+    </div>
+  </div>
+
+  <section id="view-plan" class="hidden">
+    <div class="actions">
+      <button class="btn primary" id="btnPdf">تحميل PDF</button>
+      <button class="btn" id="btnPrint">طباعة</button>
+      <span class="hint" id="planHint"></span>
+    </div>
+    <div class="sheet-wrap" id="sheetWrap"><div class="sheet-scale" id="sheetScale"><div class="sheet" id="sheet"></div></div></div>
+  </section>
+
+  <section id="view-mine" class="hidden"></section>
+
+  <section id="view-log" class="hidden">
+    <div class="actions">
+      <button class="btn primary" id="btnSeenAll">تعليم الكل كمقروء</button>
+      <span class="hint">كل إدخال أو تعديل من المعلمات يظهر هنا، والخانات المعدّلة تُظلَّل بالأصفر في الخطة حتى تطّلعي عليها.</span>
+    </div>
+    <div id="logList"></div>
+  </section>
+
+  <section id="view-settings" class="hidden">
+    <div class="panel">
+      <h2>بيانات الأسبوع</h2>
+      <div class="grid2">
+        <label class="f">الأسبوع (مثال: السادس)<input id="s_weekName"></label>
+        <label class="f">الصف<input id="s_grade"></label>
+        <label class="f">من تاريخ<input id="s_from"></label>
+        <label class="f">إلى تاريخ<input id="s_to"></label>
+        <label class="f">القيمة الأسبوعية<input id="s_weeklyValue"></label>
+      </div>
+      <div class="grid2" id="dayDates"></div>
+      <button class="btn primary" id="btnSaveWeek">حفظ بيانات الأسبوع</button>
+      <button class="btn danger" id="btnNewWeek">بدء أسبوع جديد</button>
+      <p class="hint">«أسبوع جديد» يحفظ نسخة من الخطة الحالية في الأرشيف، ثم يفرّغ الدروس والواجبات ويُبقي جدول المواد كما هو.</p>
+    </div>
+
+    <div class="panel">
+      <h2>المعلمات والمواد</h2>
+      <p class="hint">كل معلمة تفتح الرابط وتختار اسمها مرة واحدة، بعدها تستطيع تعديل حصص موادها فقط.</p>
+      <div id="teacherList"></div>
+      <button class="btn" id="btnAddTeacher">+ إضافة معلمة</button>
+      <button class="btn primary" id="btnSaveTeachers">حفظ المعلمات</button>
+    </div>
+
+    <div class="panel">
+      <h2>ترويسة الخطة</h2>
+      <div class="grid2">
+        <label class="f">السطر الأول<input id="s_kingdom"></label>
+        <label class="f">السطر الثاني<input id="s_ministry"></label>
+        <label class="f">السطر الثالث<input id="s_directorate"></label>
+        <label class="f">اسم المدرسة<input id="s_school"></label>
+      </div>
+      <label class="f">رؤيتنا<textarea id="s_vision" rows="2"></textarea></label>
+      <label class="f">رسالتنا<textarea id="s_mission" rows="2"></textarea></label>
+      <label class="f">القيم<textarea id="s_values" rows="2"></textarea></label>
+      <div class="grid2">
+        <label class="f">رائدة الصف<input id="s_leader"></label>
+        <label class="f">الوكيلة<input id="s_deputy"></label>
+        <label class="f">المديرة<input id="s_principal"></label>
+      </div>
+      <div class="grid2">
+        <label class="f">شعار الوزارة (يمين)<input type="file" accept="image/*" id="logoRight"></label>
+        <label class="f">شعار المدرسة (يسار)<input type="file" accept="image/*" id="logoLeft"></label>
+      </div>
+      <button class="btn primary" id="btnSaveHead">حفظ الترويسة</button>
+    </div>
+  </section>
+</main>
+
+<dialog id="cellDlg">
+  <div class="dlg-h" id="cellTitle"></div>
+  <div class="dlg-b">
+    <label class="f" id="subWrap">المادة<input id="c_sub" list="subList"></label>
+    <datalist id="subList"></datalist>
+    <label class="f">الدرس<textarea id="c_les" rows="3"></textarea></label>
+    <label class="f">الواجب<textarea id="c_hw" rows="2"></textarea></label>
+  </div>
+  <div class="dlg-f">
+    <button class="btn primary" id="c_save">حفظ</button>
+    <button class="btn" id="c_cancel">إلغاء</button>
+  </div>
+</dialog>
+
+<dialog id="askDlg">
+  <div class="dlg-b" id="askMsg"></div>
+  <div class="dlg-f"><button class="btn primary" id="askYes">نعم</button><button class="btn" id="askNo">إلغاء</button></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+<div id="exportHost"></div>
+
+<script>
+(function(){
+const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
+const PER=['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة','السابعة','الثامنة'];
+const DAYCOL=['#7466bd','#c2551b','#1d1d1d','#1d1d1d','#1c3d72'];
+const DEF={kingdom:'المملكة العربية السعودية',ministry:'وزارة التعليم',directorate:'',school:'',vision:'',mission:'',values:'',
+  weekName:'',grade:'',from:'',to:'',weeklyValue:'',leader:'',deputy:'',principal:'',
+  dates:['','','','',''],dayPeriods:[7,7,7,7,7],logoRight:'',logoLeft:''};
+
+let PASS='';
+async function api(op,body){
+  const r=await fetch('/api?op='+op,{method:'POST',headers:{'content-type':'application/json','x-pass':PASS},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('api '+r.status); return r.json();
+}
+async function load(){
+  const r=await fetch('/api'+(me.isOwner?'?log=1':''),{headers:{'x-pass':PASS},cache:'no-store'});
+  if(r.status===401)throw Object.assign(new Error('pass'),{pass:true});
+  if(!r.ok)throw new Error('load');
+  const d=await r.json();
+  cfg={...DEF,...(d.main||{})}; teachers=(d.teachers&&d.teachers.list)||[]; cells=d.cells||{};
+  if(d.log)logs=d.log;
+  loaded.cfg=loaded.cells=true; return d;
+}
+async function refresh(){try{await load();renderAll()}catch(e){}}
+
+const SEED={"cells": {"d0-p1": {"subject": "رياضيات", "lesson": "الطرح", "homework": "", "day": 0, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d0-p2": {"subject": "الدراسات الاسلامية", "lesson": "تلاوة سورة الواقعة من آية ٦٨ إلى آية ٩٦", "homework": "", "day": 0, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d0-p3": {"subject": "لغتي", "lesson": "الهمزة المتطرفة", "homework": "", "day": 0, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d0-p4": {"subject": "E(Topgoal)", "lesson": "U1 (Word Work + Integrated Learning)", "homework": "", "day": 0, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d0-p5": {"subject": "علوم", "lesson": "الحيوانات الفقارية ( استكشف )", "homework": "", "day": 0, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d0-p6": {"subject": "E(Science)", "lesson": "Healthy pets", "homework": "page number 12", "day": 0, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d0-p7": {"subject": "المهارات الحياتية", "lesson": "العنايه بالفم والأسنان", "homework": "", "day": 0, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d1-p1": {"subject": "E(Topgoal)", "lesson": "الدرس : U1 review", "homework": "", "day": 1, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d1-p2": {"subject": "رياضيات", "lesson": "الطرح مع وجود الارقام", "homework": "", "day": 1, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d1-p3": {"subject": "لغتي", "lesson": "تابع درس الهمزة المتطرفة", "homework": "", "day": 1, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d1-p4": {"subject": "التربية البدنية", "lesson": "", "homework": "", "day": 1, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d1-p5": {"subject": "الدراسات الاسلامية", "lesson": "الحديث/ النبي أفضل الناس - التقويم", "homework": "", "day": 1, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d1-p6": {"subject": "E(Math)", "lesson": "Time problems", "homework": "", "day": 1, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d1-p7": {"subject": "المهارات الرقمية", "lesson": "تنسيق النص", "homework": "", "day": 1, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d2-p1": {"subject": "لغتي", "lesson": "تطبيق أنشطة الهمزة المتطرفة", "homework": "", "day": 2, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d2-p2": {"subject": "علوم", "lesson": "ما الفقاريات", "homework": "", "day": 2, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d2-p3": {"subject": "الدراسات الاسلامية", "lesson": "الفقه/ الماء النجس - التقويم", "homework": "", "day": 2, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d2-p4": {"subject": "رياضيات", "lesson": "تابع الطرح مع وجود الأرقام", "homework": "", "day": 2, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d2-p5": {"subject": "الدراسات الاجتماعية", "lesson": "اختبار قصير في الوحدة الأولى", "homework": "", "day": 2, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d2-p6": {"subject": "English", "lesson": "الدرس : U2 (Vocabulary)", "homework": "", "day": 2, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d2-p7": {"subject": "فنية", "lesson": "", "homework": "", "day": 2, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d3-p1": {"subject": "الدراسات الاسلامية", "lesson": "الحديث / من فضائل النبي / الواجب : حفظ حديث أبي هريرة كاملاً صفحة ٥٤ + التقويم", "homework": "", "day": 3, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d3-p2": {"subject": "علوم", "lesson": "هل هناك فقاريات أخرى ؟", "homework": "الواجب/ سؤال ٢ صفحة ٧٤", "day": 3, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d3-p3": {"subject": "رياضيات", "lesson": "اختبار الفصل + الاختبار التراكمي", "homework": "", "day": 3, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d3-p4": {"subject": "لغتي", "lesson": "مراجعة + إملاء اختباري في الهمزة المتطرفة", "homework": "", "day": 3, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d3-p5": {"subject": "التربية البدنية", "lesson": "", "homework": "", "day": 3, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d3-p6": {"subject": "رياضيات", "lesson": "اختبار الفصل + الاختبار التراكمي", "homework": "", "day": 3, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d3-p7": {"subject": "نشاط", "lesson": "", "homework": "", "day": 3, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d4-p1": {"subject": "رياضيات", "lesson": "اختبر نفسك", "homework": "", "day": 4, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d4-p2": {"subject": "لغتي", "lesson": "حل ورقة عمل الهمزة المتطرفة", "homework": "", "day": 4, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d4-p3": {"subject": "علوم", "lesson": "ما الثدييات + مراجعة الدرس", "homework": "عمل مطوية عن الحيوانات الفقارية", "day": 4, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d4-p4": {"subject": "English", "lesson": "الدرس : U1 Exam", "homework": "", "day": 4, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d4-p5": {"subject": "الدراسات الاسلامية", "lesson": "مراجعة سورة المدثر من آية ١ إلى آية ١٦", "homework": "", "day": 4, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d4-p6": {"subject": "الدراسات الاجتماعية", "lesson": "المصادر", "homework": "", "day": 4, "period": 6, "updatedAt": 0, "updatedBy": "owner"}}, "main": {"kingdom": "المملكة العربية السعودية", "ministry": "وزارة التعليم", "directorate": "الإدارة العامة للتعليم بالمنطقة الشرقية", "school": "مدارس معالي العلوم الأهلية", "vision": "رؤيتنا: أن نكون معيار التميز للمدارس بجيل مبدع علميًا،\nمعتز بدينه ووطنه، مواكبًا لمستجدات العصر.", "mission": "رسالتنا: تقديم خدمات تربوية وتعليمية ذات جودة عالية وترسيخ\nالقيم الأخلاقية والإيجابية وتحقيق الوعي الفكري.", "values": "القيم: المواطنة – الإتقان – العدل – التنمية الذاتية -\nالعمل بروح الفريق – المسؤولية الاجتماعية.", "weekName": "السادس", "grade": "الرابع", "from": "١٤٤٨/٤/١٦", "to": "١٤٤٨/٤/٢٠", "weeklyValue": "الاحترام", "leader": "نورة المطيري", "deputy": "منى الغامدي", "principal": "نورة الدوسري", "dates": ["٤/١٦", "٤/١٧", "٤/١٨", "٤/١٩", "٤/٢٠"], "dayPeriods": [7, 7, 7, 7, 6], "logoRight": "", "logoLeft": ""}, "teachers": {"list": [{"key": "t1", "name": "معلمة الرياضيات", "subjects": ["رياضيات"]}, {"key": "t2", "name": "معلمة لغتي", "subjects": ["لغتي"]}, {"key": "t3", "name": "معلمة الدراسات الإسلامية", "subjects": ["الدراسات الاسلامية"]}, {"key": "t4", "name": "معلمة العلوم", "subjects": ["علوم"]}, {"key": "t5", "name": "معلمة اللغة الإنجليزية", "subjects": ["E(Topgoal)", "E(Science)", "E(Math)", "English"]}, {"key": "t6", "name": "معلمة الدراسات الاجتماعية", "subjects": ["الدراسات الاجتماعية"]}, {"key": "t7", "name": "معلمة المهارات", "subjects": ["المهارات الحياتية", "المهارات الرقمية"]}, {"key": "t8", "name": "معلمة التربية البدنية", "subjects": ["التربية البدنية"]}, {"key": "t9", "name": "معلمة الفنية", "subjects": ["فنية"]}, {"key": "t10", "name": "معلمة النشاط", "subjects": ["نشاط"]}]}};
+let me={isOwner:false,teacherKey:null};
+let cfg={...DEF}, teachers=[], cells={}, logs=[];
+let view='plan', cur=null, loaded={cfg:false,cells:false};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+const key=(d,p)=>`d${d}-p${p}`;
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2200)}
+function ask(msg){return new Promise(r=>{const d=$('askDlg');$('askMsg').textContent=msg;d.showModal();
+  $('askYes').onclick=()=>{d.close();r(true)};$('askNo').onclick=()=>{d.close();r(false)};})}
+
+function myTeacher(){return me.teacherKey?teachers.find(t=>t.key===me.teacherKey)||null:null}
+function canEditCell(d,p){
+  if(me.isOwner)return true;
+  const t=myTeacher(); if(!t)return false;
+  const s=norm(cells[key(d,p)]?.subject);
+  return !!s && (t.subjects||[]).some(x=>norm(x)===s);
+}
+function unseenKeys(){const s=new Set();logs.forEach(l=>{if(!l.seen)s.add(l.cell)});return s}
+
+/* ---------- Sheet ---------- */
+function renderSheet(){
+  const c=cfg, chg=me.isOwner?unseenKeys():new Set();
+  const logo=(src,alt)=>src?`<div class="logo"><img src="${esc(src)}" alt="${alt}"></div>`:`<div class="logo ${me.isOwner?'empty':''}">${me.isOwner?'الشعار':''}</div>`;
+  let rows='';
+  DAYS.forEach((dn,d)=>{
+    const n=(c.dayPeriods||DEF.dayPeriods)[d]||7;
+    for(let p=1;p<=n;p++){
+      const k=key(d,p), v=cells[k]||{}, ed=canEditCell(d,p);
+      const cls=[ed?'edit':'', chg.has(k)?'chg':'', (!me.isOwner&&ed)?'mine':''].join(' ');
+      rows+=`<tr class="${p===1?'first':''}">`;
+      if(p===1)rows+=`<td class="day" rowspan="${n}">${esc(dn)}<br>${esc((c.dates||[])[d]||'')}</td>`;
+      rows+=`<td class="per">${PER[p-1]}</td>`
+        +`<td class="sub ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(v.subject)}</td>`
+        +`<td class="les ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(v.lesson)}</td>`
+        +`<td class="hw ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(v.homework)}</td></tr>`;
+    }
+  });
+  $('sheet').innerHTML=`<div class="frame">
+    <div class="hd">${logo(c.logoRight,'شعار الوزارة')}
+      <div class="hdc">${[c.kingdom,c.ministry,c.directorate,c.school].filter(Boolean).map(esc).join('<br>')}</div>
+      ${logo(c.logoLeft,'شعار المدرسة')}</div>
+    <div class="boxes"><div class="box">${esc(c.vision)}</div><div class="box">${esc(c.mission)}</div><div class="box">${esc(c.values)}</div></div>
+  </div>
+  <div class="banner"><div class="bmain">خطة الأسبوع ${esc(c.weekName)} – للصف ${esc(c.grade)}&nbsp;&nbsp; ${esc(c.from)}هـ إلى ${esc(c.to)}هـ</div>
+    <div class="bval">القيمة الأسبوعية: ${esc(c.weeklyValue)}</div></div>
+  <table><colgroup><col style="width:9%"><col style="width:8%"><col style="width:15%"><col style="width:40%"><col style="width:28%"></colgroup>
+    <thead><tr><th>اليوم</th><th>الحصة</th><th>المادة</th><th>الدرس</th><th>الواجب</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+  <div class="ft"><span>رائدة الصف: ${esc(c.leader)}</span><span>الوكيلة: ${esc(c.deputy)}</span><span>المديرة: ${esc(c.principal)}</span></div>`;
+  fitSheet();
+  const t=myTeacher();
+  $('planHint').textContent=me.isOwner?'اضغطي على أي حصة لتعديل المادة أو الدرس أو الواجب.'
+    :t?'الحصص المظللة بالأزرق هي حصصك، اضغطي عليها للإدخال.':'';
+}
+function fitSheet(){
+  const w=$('sheetWrap').clientWidth||794, s=Math.min(1,w/794);
+  $('sheetScale').style.transform=`scale(${s})`;
+  $('sheetWrap').style.height=($('sheet').offsetHeight*s)+'px';
+  $('sheetWrap').style.width=(794*s)+'px';
+}
+addEventListener('resize',fitSheet);
+$('sheet').addEventListener('click',e=>{
+  const td=e.target.closest('td[data-k]'); if(!td||!td.classList.contains('edit'))return;
+  const [d,p]=td.dataset.k.split(',').map(Number); openCell(d,p);
+});
+
+/* ---------- Cell dialog ---------- */
+function openCell(d,p){
+  cur={d,p}; const v=cells[key(d,p)]||{};
+  $('cellTitle').textContent=`${DAYS[d]} – الحصة ${PER[p-1]}${v.subject?' – '+v.subject:''}`;
+  $('subWrap').classList.toggle('hidden',!me.isOwner);
+  $('c_sub').value=v.subject||''; $('c_les').value=v.lesson||''; $('c_hw').value=v.homework||'';
+  const subs=[...new Set(Object.values(cells).map(c=>norm(c.subject)).filter(Boolean))];
+  $('subList').innerHTML=subs.map(s=>`<option value="${esc(s)}">`).join('');
+  $('cellDlg').showModal();
+}
+$('c_cancel').onclick=()=>$('cellDlg').close();
+$('c_save').onclick=async()=>{
+  if(!cur)return; const {d,p}=cur, k=key(d,p), old=cells[k]||{};
+  const nv={subject:me.isOwner?norm($('c_sub').value):(old.subject||''),lesson:$('c_les').value.trim(),homework:$('c_hw').value.trim()};
+  if(nv.subject===(old.subject||'')&&nv.lesson===(old.lesson||'')&&nv.homework===(old.homework||'')){$('cellDlg').close();return}
+  $('c_save').disabled=true;
+  try{
+    const t=myTeacher();
+    await api('set',{key:'cell/'+k,data:{...nv,day:d,period:p,updatedAt:Date.now(),updatedBy:me.isOwner?'owner':(t?.key||'')}});
+    if(!me.isOwner){
+      await api('log',{data:{cell:k,day:d,period:p,subject:nv.subject,teacherKey:t?.key||'',teacherName:t?.name||'',
+        oldLesson:old.lesson||'',newLesson:nv.lesson,oldHw:old.homework||'',newHw:nv.homework,
+        kind:(old.lesson||old.homework)?'تعديل':'إدخال',at:Date.now(),seen:false}});
+    }
+    cells[k]={...old,...nv}; $('cellDlg').close(); toast('تم الحفظ ✓'); renderAll();
+  }catch(e){toast(e?.code==='invalid_argument'?'لا تملكين صلاحية التعديل':'تعذّر الحفظ، حاولي مرة أخرى')}
+  finally{$('c_save').disabled=false}
+};
+
+/* ---------- Mine ---------- */
+function renderMine(){
+  const el=$('view-mine');
+  if(me.isOwner){
+    el.innerHTML=`<div class="panel"><h2>أنتِ المشرفة</h2><p>تستطيعين تعديل كل الحصص من تبويب «الخطة»، ومتابعة إدخالات المعلمات من «التعديلات». هذه الصفحة للمعلمات: كل معلمة ترى فيها حصص موادها فقط.</p></div>`;return;
+  }
+  const t=myTeacher();
+  if(!t){el.innerHTML='<p class="msg">اسمك غير موجود في قائمة المعلمات، تواصلي مع المشرفة.</p>';return}
+  let html=`<div class="panel"><h2>${esc(t.name)}</h2><div class="hint">موادك: ${esc((t.subjects||[]).join('، '))}</div></div>`, any=false;
+  DAYS.forEach((dn,d)=>{
+    const n=(cfg.dayPeriods||DEF.dayPeriods)[d]||7; let items='';
+    for(let p=1;p<=n;p++){ if(!canEditCell(d,p))continue; any=true; const v=cells[key(d,p)]||{};
+      items+=`<div class="card"><div><div class="meta">الحصة ${PER[p-1]} – ${esc(v.subject)}</div>
+        <div class="val" dir="auto"><b>الدرس:</b> ${v.lesson?esc(v.lesson):'<span class="empty">لم يُدخل بعد</span>'}</div>
+        <div class="val" dir="auto"><b>الواجب:</b> ${v.homework?esc(v.homework):'<span class="empty">لا يوجد</span>'}</div></div>
+        <button class="btn primary" data-e="${d},${p}">إدخال</button></div>`;}
+    if(items)html+=`<div class="day-group"><h3>${dn} ${esc((cfg.dates||[])[d]||'')}</h3>${items}</div>`;
+  });
+  if(!any)html+='<p class="msg">لا توجد حصص لموادك في جدول هذا الأسبوع.</p>';
+  el.innerHTML=html;
+  el.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const [d,p]=b.dataset.e.split(',').map(Number);openCell(d,p)});
+}
+
+/* ---------- Log ---------- */
+function renderLog(){
+  const un=logs.filter(l=>!l.seen).length;
+  $('logBadge').textContent=un; $('logBadge').classList.toggle('hidden',!un);
+  if(view!=='log')return;
+  const fmt=t=>new Date(t).toLocaleString('ar-SA',{weekday:'long',hour:'numeric',minute:'2-digit',day:'numeric',month:'numeric'});
+  const df=(a,b)=>a===b?`<span dir="auto">${esc(b)||'—'}</span>`:`${a?`<del dir="auto">${esc(a)}</del> ← `:''}<ins dir="auto">${esc(b)||'(حُذف)'}</ins>`;
+  $('logList').innerHTML=logs.length?logs.map(l=>`<div class="card log-item ${l.seen?'':'unseen'}">
+    <div><div><b>${esc(l.teacherName||'معلمة')}</b> — ${esc(l.kind)} ${esc(l.subject)} · ${DAYS[l.day]||''} الحصة ${PER[(l.period||1)-1]}</div>
+    <div class="meta">${fmt(l.at)}</div>
+    <div class="diff"><b>الدرس:</b> ${df(l.oldLesson,l.newLesson)}</div>
+    <div class="diff"><b>الواجب:</b> ${df(l.oldHw,l.newHw)}</div></div>
+    ${l.seen?'':`<button class="btn" data-s="${esc(l.id)}">اطّلعت</button>`}</div>`).join('')
+    :'<p class="msg">لا توجد تعديلات بعد.</p>';
+  $('logList').querySelectorAll('[data-s]').forEach(b=>b.onclick=async()=>{b.disabled=true;
+    try{await api('seen',{ids:[b.dataset.s]});refresh()}catch(e){b.disabled=false;toast('تعذّر التحديث')}});
+}
+$('btnSeenAll').onclick=async()=>{
+  const un=logs.filter(l=>!l.seen); if(!un.length)return; $('btnSeenAll').disabled=true;
+  try{await api('seen',{ids:un.map(l=>l.id)});await refresh()}catch(e){toast('تعذّر التحديث')}
+  $('btnSeenAll').disabled=false; toast('تم');
+};
+
+/* ---------- Settings ---------- */
+const CF=['weekName','grade','from','to','weeklyValue','kingdom','ministry','directorate','school','vision','mission','values','leader','deputy','principal'];
+let tDraft=null;
+function fillSettings(){
+  CF.forEach(f=>{const e=$('s_'+f); if(e&&document.activeElement!==e)e.value=cfg[f]||''});
+  $('dayDates').innerHTML=DAYS.map((d,i)=>`<label class="f">${d}: التاريخ / عدد الحصص
+    <input data-date="${i}" value="${esc((cfg.dates||[])[i]||'')}" placeholder="مثال: ٤/١٦">
+    <input data-np="${i}" type="number" min="1" max="8" value="${(cfg.dayPeriods||DEF.dayPeriods)[i]||7}"></label>`).join('');
+  if(!tDraft)tDraft=JSON.parse(JSON.stringify(teachers));
+  renderTeachers();
+}
+function allSubjects(){const s=new Set();Object.values(cells).forEach(c=>{const n=norm(c.subject);if(n)s.add(n)});tDraft.forEach(t=>(t.subjects||[]).forEach(x=>s.add(norm(x))));return [...s]}
+function renderTeachers(){
+  const subs=allSubjects();
+  $('teacherList').innerHTML=tDraft.map((t,i)=>{return `<div class="t-row">
+    <label class="f">اسم المعلمة<input data-tn="${i}" value="${esc(t.name)}"></label>
+    <div class="chips">${subs.map(s=>`<label><input type="checkbox" data-ts="${i}" value="${esc(s)}" ${(t.subjects||[]).map(norm).includes(s)?'checked':''}>${esc(s)}</label>`).join('')}</div>
+    <button class="btn danger" data-td="${i}">حذف</button></div>`}).join('');
+  $('teacherList').querySelectorAll('[data-tn]').forEach(e=>e.oninput=()=>tDraft[e.dataset.tn].name=e.value);
+  $('teacherList').querySelectorAll('[data-ts]').forEach(e=>e.onchange=()=>{const t=tDraft[e.dataset.ts];const set=new Set((t.subjects||[]).map(norm));e.checked?set.add(e.value):set.delete(e.value);t.subjects=[...set]});
+  $('teacherList').querySelectorAll('[data-td]').forEach(e=>e.onclick=()=>{tDraft.splice(+e.dataset.td,1);renderTeachers()});
+}
+$('btnAddTeacher').onclick=()=>{tDraft.push({key:'t'+Date.now().toString(36),name:'',subjects:[]});renderTeachers()};
+$('btnSaveTeachers').onclick=async()=>{
+  const list=tDraft.filter(t=>norm(t.name)).map(t=>({key:t.key,name:norm(t.name),subjects:(t.subjects||[]).map(norm)}));
+  try{await api('set',{key:'teachers',data:{list}});teachers=list;tDraft=null;fillSettings();toast('تم حفظ المعلمات ✓')}catch(e){toast('تعذّر الحفظ')}
+};
+async function saveCfg(patch){
+  const next={...cfg,...patch};
+  try{await api('set',{key:'main',data:next});cfg=next;renderAll();toast('تم الحفظ ✓')}catch(e){toast('تعذّر الحفظ')}
+}
+$('btnSaveWeek').onclick=()=>{
+  const p={};['weekName','grade','from','to','weeklyValue'].forEach(f=>p[f]=$('s_'+f).value.trim());
+  p.dates=DAYS.map((_,i)=>document.querySelector(`[data-date="${i}"]`).value.trim());
+  p.dayPeriods=DAYS.map((_,i)=>Math.max(1,Math.min(8,+document.querySelector(`[data-np="${i}"]`).value||7)));
+  saveCfg(p);
+};
+$('btnSaveHead').onclick=()=>{const p={};['kingdom','ministry','directorate','school','vision','mission','values','leader','deputy','principal'].forEach(f=>p[f]=$('s_'+f).value.trim());saveCfg(p)};
+function readLogo(input,field){input.onchange=()=>{const f=input.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,220/Math.max(img.width,img.height));const c=document.createElement('canvas');
+    c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);saveCfg({[field]:c.toDataURL('image/png')})};img.src=r.result};r.readAsDataURL(f)}}
+readLogo($('logoRight'),'logoRight');readLogo($('logoLeft'),'logoLeft');
+$('btnNewWeek').onclick=async()=>{
+  if(!(await ask('سيتم حفظ الخطة الحالية في الأرشيف وتفريغ كل الدروس والواجبات. متابعة؟')))return;
+  $('btnNewWeek').disabled=true;
+  try{
+    await api('set',{key:'archive/'+Date.now(),data:{cfg,cells,at:Date.now()}});
+    for(const [k,v] of Object.entries(cells)){ if(v.lesson||v.homework){ await api('set',{key:'cell/'+k,data:{...v,lesson:'',homework:'',updatedAt:Date.now()}}); } }
+    const un2=logs.filter(l=>!l.seen).map(l=>l.id);if(un2.length)await api('seen',{ids:un2});await refresh();
+    await refresh();toast('بدأ أسبوع جديد، حدّثي التاريخ واسم الأسبوع');
+  }catch(e){toast('تعذّر إكمال العملية')}
+  $('btnNewWeek').disabled=false;
+};
+
+/* ---------- Export ---------- */
+function fileName(){return `خطة الأسبوع ${cfg.weekName||''} - الصف ${cfg.grade||''}.pdf`.replace(/\s+/g,' ')}
+$('btnPdf').onclick=async()=>{
+  const b=$('btnPdf'); b.disabled=true; b.textContent='جارٍ التجهيز…';
+  try{
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const host=$('exportHost'); host.innerHTML=''; const clone=$('sheet').cloneNode(true); clone.id=''; clone.classList.add('exporting'); clone.style.boxShadow='none'; host.appendChild(clone);
+    const canvas=await html2canvas(clone,{scale:2.2,backgroundColor:'#ffffff',logging:false});
+    host.innerHTML='';
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+    let w=210,h=canvas.height*w/canvas.width; if(h>297){h=297;w=canvas.width*h/canvas.height}
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',(210-w)/2,0,w,h);
+        pdf.save(fileName()); toast('تم تجهيز الملف ✓')
+  }catch(e){ toast('تعذّر إنشاء الملف') }
+  b.disabled=false; b.textContent='تحميل PDF';
+};
+$('btnPrint').onclick=()=>{try{window.print()}catch(e){toast('الطباعة غير متاحة هنا، استخدمي «تحميل PDF»')}};
+
+/* ---------- Views ---------- */
+function setView(v){view=v;document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v));
+  ['plan','mine','log','settings'].forEach(x=>$('view-'+x).classList.toggle('hidden',x!==v));
+  if(v==='settings'){tDraft=null;fillSettings()} renderAll(); if(v==='plan')requestAnimationFrame(fitSheet)}
+$('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)setView(t.dataset.v)});
+function renderAll(){
+  if(!loaded.cfg||!loaded.cells||(!me.isOwner&&!me.teacherKey))return;
+  $('loading').classList.add('hidden');
+  const t=myTeacher();
+  $('roleTag').textContent=me.isOwner?'المشرفة':t?t.name:'معلمة';
+  renderSheet(); renderMine(); renderLog();
+}
+
+/* ---------- Boot ---------- */
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let started=false;
+function showGate(step){
+  $('gate').classList.remove('hidden');$('loading').classList.add('hidden');
+  ['plan','mine','log','settings'].forEach(x=>$('view-'+x).classList.add('hidden'));
+  $('gatePass').classList.toggle('hidden',step!=='pass');$('gateWho').classList.toggle('hidden',step!=='who');
+  if(step==='pass')setTimeout(()=>$('pw').focus(),50);
+  if(step==='who')renderWho();
+}
+function renderWho(){
+  $('whoList').innerHTML=`<button data-w="owner"><b>المشرفة</b><small>متابعة الخطة وكل التعديلات</small></button>`+
+    teachers.map(t=>`<button data-w="${esc(t.key)}"><b>${esc(t.name)}</b><small>${esc((t.subjects||[]).join('، '))}</small></button>`).join('');
+  $('whoList').querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{store.set('wp_who',b.dataset.w);enter(b.dataset.w)});
+}
+$('pwGo').onclick=async()=>{
+  PASS=$('pw').value.trim(); $('pwGo').disabled=true; $('pwErr').textContent='';
+  try{const d=await load();await seedIfEmpty(d);store.set('wp_pass',PASS);showGate('who')}
+  catch(e){$('pwErr').textContent=e.pass?'كلمة المرور غير صحيحة':'تعذّر الاتصال، حاولي مرة أخرى'}
+  $('pwGo').disabled=false;
+};
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('pwGo').click()});
+$('btnSwitch').onclick=()=>{store.del('wp_who');location.reload()};
+function enter(who){
+  me.isOwner=who==='owner'; me.teacherKey=me.isOwner?null:who;
+  $('gate').classList.add('hidden');$('btnSwitch').classList.remove('hidden');
+  $('tabLog').classList.toggle('hidden',!me.isOwner);$('tabSettings').classList.toggle('hidden',!me.isOwner);
+  setView(me.isOwner?'plan':'mine'); refresh();
+}
+async function seedIfEmpty(d){
+  if(d.main)return;
+  for(const [k,v] of Object.entries(SEED.cells))await api('set',{key:'cell/'+k,data:v});
+  await api('set',{key:'teachers',data:SEED.teachers});
+  await api('set',{key:'main',data:SEED.main});
+  await load();
+}
+async function boot(){
+  PASS=store.get('wp_pass')||'';
+  if(!PASS)return showGate('pass');
+  $('loading').classList.remove('hidden');
+  try{const d=await load();await seedIfEmpty(d)}
+  catch(e){if(e.pass){store.del('wp_pass');return showGate('pass')} $('loading').textContent='تعذّر الاتصال بالخادم، حدّثي الصفحة.';return}
+  const who=store.get('wp_who');
+  if(who&&(who==='owner'||teachers.some(t=>t.key===who)))enter(who); else showGate('who');
+  setInterval(()=>{if(!document.hidden&&(me.isOwner||me.teacherKey))refresh()},10000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+}
+boot();
+})();
+</script>
+</body>
+</html>
