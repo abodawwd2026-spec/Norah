@@ -193,6 +193,8 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
       <label class="f">الصف<input id="s_grade"></label>
       <div class="grid2" id="dayPer"></div>
       <button class="btn primary" id="btnSaveGrade">حفظ</button>
+      <button class="btn" id="btnResetTT">إعادة ترتيب المواد كما في ملف الخطة</button>
+      <p class="hint">يعيد ترتيب المواد في كل الأيام والحصص مثل الملف الأصلي تمامًا، دون أن يمسح الدروس أو الواجبات.</p>
     </div>
     <div class="panel">
       <h2>ترويسة الخطة</h2>
@@ -254,7 +256,7 @@ const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء',
 const PER=['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة','السابعة','الثامنة'];
 const DAYCOL=['#7466bd','#c2551b','#1d1d1d','#1d1d1d','#1c3d72'];
 const SEMN={1:'الفصل الأول',2:'الفصل الثاني'};
-const DEF={kingdom:'',ministry:'',directorate:'',school:'',vision:'',mission:'',values:'',grade:'',leader:'',deputy:'',principal:'',dayPeriods:[7,7,7,7,7],logoRight:'',logoLeft:'',activeWeek:'s1w1'};
+const DEF={kingdom:'',ministry:'',directorate:'',school:'',vision:'',mission:'',values:'',grade:'',leader:'',deputy:'',principal:'',dayPeriods:[7,7,7,7,6],logoRight:'',logoLeft:'',activeWeek:'s1w6'};
 const W=Object.fromEntries(CAL.map(w=>[w.id,w]));
 
 let PASS='', ROLE=null, me={isOwner:false,teacherKey:null};
@@ -282,15 +284,16 @@ async function load(){
   if(r.status===401)throw Object.assign(new Error('pass'),{pass:true});
   if(!r.ok)throw new Error('load');
   const d=await r.json();
-  cfg={...DEF,...(d.main||{})}; teachers=(d.teachers&&d.teachers.list)||[]; timetable=d.timetable||{};
-  cells=d.cells||{}; weekMeta=d.week||{}; weekId=d.weekId; if(d.log)logs=d.log; ROLE=d.role;
+  cfg={...DEF,...(d.main||{})}; teachers=(d.teachers&&d.teachers.list&&d.teachers.list.length)?d.teachers.list:SEED.teachers.list; timetable=d.timetable||{};
+  if(!cfg.activeWeek||!W[cfg.activeWeek])cfg.activeWeek='s1w6'; if(!Array.isArray(cfg.dayPeriods))cfg.dayPeriods=SEED.main.dayPeriods;
+  cells=d.cells||{}; weekMeta=d.week||{}; weekId=W[d.weekId]?d.weekId:(viewWeek||cfg.activeWeek); if(d.log)logs=d.log; ROLE=d.role;
   loaded=true; return d;
 }
 async function refresh(){try{await load();renderAll()}catch(e){}}
 
 /* ---------- helpers ---------- */
 function myTeacher(){return me.teacherKey?teachers.find(t=>t.key===me.teacherKey)||null:null}
-const subjectOf=k=>norm(cells[k]?.subject??timetable[k]??'');
+const subjectOf=k=>norm(cells[k]?.subject??timetable[k]??SEED.timetable[k]??'');
 const isOff=d=>!!(W[weekId]?.days[d]?.off);
 function canEditCell(d,p){
   if(isOff(d))return false;
@@ -493,6 +496,10 @@ async function saveCfg(patch){
 }
 $('btnSaveGrade').onclick=()=>saveCfg({grade:$('s_grade').value.trim(),dayPeriods:DAYS.map((_,i)=>Math.max(1,Math.min(8,+document.querySelector(`[data-np="${i}"]`).value||7)))});
 $('btnSaveHead').onclick=()=>{const p={};HF.forEach(f=>p[f]=$('s_'+f).value.trim());saveCfg(p)};
+$('btnResetTT').onclick=async()=>{
+  if(!(await ask('إعادة ترتيب المواد في كل الأسابيع كما في ملف الخطة الأصلي؟')))return;
+  try{await api('set',{key:'timetable',data:SEED.timetable});await api('set',{key:'main',data:{...cfg,dayPeriods:SEED.main.dayPeriods}});await refresh();toast('تم ترتيب المواد ✓')}catch(e){toast('تعذّر الحفظ')}
+};
 $('btnResetLogos').onclick=()=>saveCfg({logoRight:'',logoLeft:''});
 function readLogo(input,field){input.onchange=()=>{const f=input.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,240/Math.max(img.width,img.height));const c=document.createElement('canvas');
