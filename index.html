@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 :root{
   --bg:#eef2f6; --surface:#ffffff; --ink:#18222e; --muted:#5d6b7a; --line:#d5dde6;
@@ -62,10 +61,10 @@ main{max-width:1100px;margin:auto;padding:1rem}
 .sheet .hdc{text-align:center;font-weight:800;font-size:9.5px;line-height:1.9}
 .sheet .boxes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:4px 30px 6px}
 .sheet .box{border:1px solid #222;font-size:9.5px;font-weight:800;line-height:1.6;padding:4px 6px;text-align:center;white-space:pre-line}
-.sheet .banner{display:grid;grid-template-columns:1fr 225px;gap:8px;margin:8px 0 6px}
+.sheet .banner{display:grid;grid-template-columns:1fr 200px;gap:8px;margin:8px 0 6px}
 .sheet .bmain,.sheet .bval{background:#2a6aa8;color:#fff;font-weight:800;border-radius:0 0 0 22px;padding:9px 14px;box-shadow:inset 0 -4px 0 #1b4d80}
-.sheet .bmain{font-size:17px;border-radius:0 0 0 30px}
-.sheet .bval{font-size:15px;text-align:center;border-radius:0 0 30px 0}
+.sheet .bmain{font-size:15.5px;white-space:nowrap;border-radius:0 0 0 30px}
+.sheet .bval{font-size:14px;white-space:nowrap;text-align:center;border-radius:0 0 30px 0}
 .sheet table{width:94%;margin:0 auto;border-collapse:collapse;table-layout:fixed}
 .sheet th{background:#dfe6ef;border:1px solid #444;font-size:13px;font-weight:800;padding:4px 2px}
 .sheet td{border:1px solid #9aa4b0;font-size:10.5px;font-weight:700;text-align:center;padding:3px 4px;height:24px;line-height:1.35;vertical-align:middle;word-wrap:break-word}
@@ -110,6 +109,10 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
 .dlg-f{padding:.8rem 1rem;border-top:1px solid var(--line);display:flex;gap:.5rem;justify-content:flex-start}
 .toast{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:.55rem 1rem;border-radius:8px;font-weight:700;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+.wk{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.wk select{padding:.4rem .5rem;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-weight:700;max-width:100%}
+.active-tag{font-size:.8rem;background:var(--ok);color:#fff;border-radius:999px;padding:.1rem .55rem;font-weight:700}
+.sheet td.off{background:#e9f5ec;color:#1f6b3a!important;font-size:14px;font-weight:800;height:60px}
 .gate{max-width:420px;margin:3rem auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.5rem}
 .gate h1{margin:0 0 .3rem;font-size:1.3rem}
 .gate .err{color:var(--danger);font-weight:700;min-height:1.5em}
@@ -154,13 +157,11 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
       <div class="err" id="pwErr"></div>
       <button class="btn primary" id="pwGo">دخول</button>
     </div>
-    <div id="gateWho" class="hidden">
-      <p>من أنتِ؟</p>
-      <div class="pick" id="whoList"></div>
-    </div>
+    <div id="gateWho" class="hidden"><p>من أنتِ؟</p><div class="pick" id="whoList"></div></div>
   </div>
 
   <section id="view-plan" class="hidden">
+    <div class="panel no-print" id="weekBar"></div>
     <div class="actions">
       <button class="btn primary" id="btnPdf">تحميل PDF</button>
       <button class="btn" id="btnPrint">طباعة</button>
@@ -181,28 +182,18 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
 
   <section id="view-settings" class="hidden">
     <div class="panel">
-      <h2>بيانات الأسبوع</h2>
-      <div class="grid2">
-        <label class="f">الأسبوع (مثال: السادس)<input id="s_weekName"></label>
-        <label class="f">الصف<input id="s_grade"></label>
-        <label class="f">من تاريخ<input id="s_from"></label>
-        <label class="f">إلى تاريخ<input id="s_to"></label>
-        <label class="f">القيمة الأسبوعية<input id="s_weeklyValue"></label>
-      </div>
-      <div class="grid2" id="dayDates"></div>
-      <button class="btn primary" id="btnSaveWeek">حفظ بيانات الأسبوع</button>
-      <button class="btn danger" id="btnNewWeek">بدء أسبوع جديد</button>
-      <p class="hint">«أسبوع جديد» يحفظ نسخة من الخطة الحالية في الأرشيف، ثم يفرّغ الدروس والواجبات ويُبقي جدول المواد كما هو.</p>
-    </div>
-
-    <div class="panel">
       <h2>المعلمات والمواد</h2>
-      <p class="hint">كل معلمة تفتح الرابط وتختار اسمها مرة واحدة، بعدها تستطيع تعديل حصص موادها فقط.</p>
+      <p class="hint">كل معلمة تدخل بكلمة المرور وتختار اسمها، وتستطيع تعديل حصص موادها في الأسبوع النشط فقط.</p>
       <div id="teacherList"></div>
       <button class="btn" id="btnAddTeacher">+ إضافة معلمة</button>
       <button class="btn primary" id="btnSaveTeachers">حفظ المعلمات</button>
     </div>
-
+    <div class="panel">
+      <h2>الصف وعدد الحصص</h2>
+      <label class="f">الصف<input id="s_grade"></label>
+      <div class="grid2" id="dayPer"></div>
+      <button class="btn primary" id="btnSaveGrade">حفظ</button>
+    </div>
     <div class="panel">
       <h2>ترويسة الخطة</h2>
       <div class="grid2">
@@ -220,10 +211,11 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
         <label class="f">المديرة<input id="s_principal"></label>
       </div>
       <div class="grid2">
-        <label class="f">شعار الوزارة (يمين)<input type="file" accept="image/*" id="logoRight"></label>
-        <label class="f">شعار المدرسة (يسار)<input type="file" accept="image/*" id="logoLeft"></label>
+        <label class="f">تغيير شعار الوزارة (يمين)<input type="file" accept="image/*" id="logoRight"></label>
+        <label class="f">تغيير شعار المدرسة (يسار)<input type="file" accept="image/*" id="logoLeft"></label>
       </div>
       <button class="btn primary" id="btnSaveHead">حفظ الترويسة</button>
+      <button class="btn" id="btnResetLogos">استعادة الشعارات الأصلية</button>
     </div>
   </section>
 </main>
@@ -231,7 +223,10 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
 <dialog id="cellDlg">
   <div class="dlg-h" id="cellTitle"></div>
   <div class="dlg-b">
-    <label class="f" id="subWrap">المادة<input id="c_sub" list="subList"></label>
+    <div id="subWrap">
+      <label class="f">المادة<input id="c_sub" list="subList"></label>
+      <label class="hint" style="display:flex;gap:.4rem;align-items:center;margin:-.3rem 0 .7rem"><input type="checkbox" id="c_all" checked> تطبيق المادة على كل الأسابيع</label>
+    </div>
     <datalist id="subList"></datalist>
     <label class="f">الدرس<textarea id="c_les" rows="3"></textarea></label>
     <label class="f">الواجب<textarea id="c_hw" rows="2"></textarea></label>
@@ -241,102 +236,146 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
     <button class="btn" id="c_cancel">إلغاء</button>
   </div>
 </dialog>
-
 <dialog id="askDlg">
   <div class="dlg-b" id="askMsg"></div>
   <div class="dlg-f"><button class="btn primary" id="askYes">نعم</button><button class="btn" id="askNo">إلغاء</button></div>
 </dialog>
-
 <div class="toast" id="toast"></div>
 <div id="exportHost"></div>
 
 <script>
 (function(){
+const CAL=[{"id": "s1w1", "sem": 1, "n": 1, "name": "الأول", "note": "بداية العام الدراسي ١٤٤٨هـ", "days": [{"h": "٣/١٠", "y": "١٤٤٨", "g": "23/08/2026", "off": ""}, {"h": "٣/١١", "y": "١٤٤٨", "g": "24/08/2026", "off": ""}, {"h": "٣/١٢", "y": "١٤٤٨", "g": "25/08/2026", "off": ""}, {"h": "٣/١٣", "y": "١٤٤٨", "g": "26/08/2026", "off": ""}, {"h": "٣/١٤", "y": "١٤٤٨", "g": "27/08/2026", "off": ""}]}, {"id": "s1w2", "sem": 1, "n": 2, "name": "الثاني", "note": "", "days": [{"h": "٣/١٧", "y": "١٤٤٨", "g": "30/08/2026", "off": ""}, {"h": "٣/١٨", "y": "١٤٤٨", "g": "31/08/2026", "off": ""}, {"h": "٣/١٩", "y": "١٤٤٨", "g": "01/09/2026", "off": ""}, {"h": "٣/٢٠", "y": "١٤٤٨", "g": "02/09/2026", "off": ""}, {"h": "٣/٢١", "y": "١٤٤٨", "g": "03/09/2026", "off": ""}]}, {"id": "s1w3", "sem": 1, "n": 3, "name": "الثالث", "note": "", "days": [{"h": "٣/٢٤", "y": "١٤٤٨", "g": "06/09/2026", "off": ""}, {"h": "٣/٢٥", "y": "١٤٤٨", "g": "07/09/2026", "off": ""}, {"h": "٣/٢٦", "y": "١٤٤٨", "g": "08/09/2026", "off": ""}, {"h": "٣/٢٧", "y": "١٤٤٨", "g": "09/09/2026", "off": ""}, {"h": "٣/٢٨", "y": "١٤٤٨", "g": "10/09/2026", "off": ""}]}, {"id": "s1w4", "sem": 1, "n": 4, "name": "الرابع", "note": "", "days": [{"h": "٤/٢", "y": "١٤٤٨", "g": "13/09/2026", "off": ""}, {"h": "٤/٣", "y": "١٤٤٨", "g": "14/09/2026", "off": ""}, {"h": "٤/٤", "y": "١٤٤٨", "g": "15/09/2026", "off": ""}, {"h": "٤/٥", "y": "١٤٤٨", "g": "16/09/2026", "off": ""}, {"h": "٤/٦", "y": "١٤٤٨", "g": "17/09/2026", "off": ""}]}, {"id": "s1w5", "sem": 1, "n": 5, "name": "الخامس", "note": "", "days": [{"h": "٤/٩", "y": "١٤٤٨", "g": "20/09/2026", "off": ""}, {"h": "٤/١٠", "y": "١٤٤٨", "g": "21/09/2026", "off": ""}, {"h": "٤/١١", "y": "١٤٤٨", "g": "22/09/2026", "off": ""}, {"h": "٤/١٢", "y": "١٤٤٨", "g": "23/09/2026", "off": "إجازة اليوم الوطني"}, {"h": "٤/١٣", "y": "١٤٤٨", "g": "24/09/2026", "off": "إجازة اليوم الوطني"}]}, {"id": "s1w6", "sem": 1, "n": 6, "name": "السادس", "note": "", "days": [{"h": "٤/١٦", "y": "١٤٤٨", "g": "27/09/2026", "off": ""}, {"h": "٤/١٧", "y": "١٤٤٨", "g": "28/09/2026", "off": ""}, {"h": "٤/١٨", "y": "١٤٤٨", "g": "29/09/2026", "off": ""}, {"h": "٤/١٩", "y": "١٤٤٨", "g": "30/09/2026", "off": ""}, {"h": "٤/٢٠", "y": "١٤٤٨", "g": "01/10/2026", "off": ""}]}, {"id": "s1w7", "sem": 1, "n": 7, "name": "السابع", "note": "", "days": [{"h": "٤/٢٣", "y": "١٤٤٨", "g": "04/10/2026", "off": ""}, {"h": "٤/٢٤", "y": "١٤٤٨", "g": "05/10/2026", "off": ""}, {"h": "٤/٢٥", "y": "١٤٤٨", "g": "06/10/2026", "off": ""}, {"h": "٤/٢٦", "y": "١٤٤٨", "g": "07/10/2026", "off": ""}, {"h": "٤/٢٧", "y": "١٤٤٨", "g": "08/10/2026", "off": ""}]}, {"id": "s1w8", "sem": 1, "n": 8, "name": "الثامن", "note": "", "days": [{"h": "٤/٣٠", "y": "١٤٤٨", "g": "11/10/2026", "off": ""}, {"h": "٥/١", "y": "١٤٤٨", "g": "12/10/2026", "off": ""}, {"h": "٥/٢", "y": "١٤٤٨", "g": "13/10/2026", "off": ""}, {"h": "٥/٣", "y": "١٤٤٨", "g": "14/10/2026", "off": ""}, {"h": "٥/٤", "y": "١٤٤٨", "g": "15/10/2026", "off": ""}]}, {"id": "s1w9", "sem": 1, "n": 9, "name": "التاسع", "note": "", "days": [{"h": "٥/٧", "y": "١٤٤٨", "g": "18/10/2026", "off": ""}, {"h": "٥/٨", "y": "١٤٤٨", "g": "19/10/2026", "off": ""}, {"h": "٥/٩", "y": "١٤٤٨", "g": "20/10/2026", "off": ""}, {"h": "٥/١٠", "y": "١٤٤٨", "g": "21/10/2026", "off": ""}, {"h": "٥/١١", "y": "١٤٤٨", "g": "22/10/2026", "off": ""}]}, {"id": "s1w10", "sem": 1, "n": 10, "name": "العاشر", "note": "", "days": [{"h": "٥/١٤", "y": "١٤٤٨", "g": "25/10/2026", "off": "إجازة إضافية"}, {"h": "٥/١٥", "y": "١٤٤٨", "g": "26/10/2026", "off": ""}, {"h": "٥/١٦", "y": "١٤٤٨", "g": "27/10/2026", "off": ""}, {"h": "٥/١٧", "y": "١٤٤٨", "g": "28/10/2026", "off": ""}, {"h": "٥/١٨", "y": "١٤٤٨", "g": "29/10/2026", "off": ""}]}, {"id": "s1w11", "sem": 1, "n": 11, "name": "الحادي عشر", "note": "", "days": [{"h": "٥/٢١", "y": "١٤٤٨", "g": "01/11/2026", "off": ""}, {"h": "٥/٢٢", "y": "١٤٤٨", "g": "02/11/2026", "off": ""}, {"h": "٥/٢٣", "y": "١٤٤٨", "g": "03/11/2026", "off": ""}, {"h": "٥/٢٤", "y": "١٤٤٨", "g": "04/11/2026", "off": ""}, {"h": "٥/٢٥", "y": "١٤٤٨", "g": "05/11/2026", "off": ""}]}, {"id": "s1w12", "sem": 1, "n": 12, "name": "الثاني عشر", "note": "", "days": [{"h": "٥/٢٨", "y": "١٤٤٨", "g": "08/11/2026", "off": ""}, {"h": "٥/٢٩", "y": "١٤٤٨", "g": "09/11/2026", "off": ""}, {"h": "٥/٣٠", "y": "١٤٤٨", "g": "10/11/2026", "off": ""}, {"h": "٦/١", "y": "١٤٤٨", "g": "11/11/2026", "off": ""}, {"h": "٦/٢", "y": "١٤٤٨", "g": "12/11/2026", "off": ""}]}, {"id": "s1w13", "sem": 1, "n": 13, "name": "الثالث عشر", "note": "", "days": [{"h": "٦/٥", "y": "١٤٤٨", "g": "15/11/2026", "off": ""}, {"h": "٦/٦", "y": "١٤٤٨", "g": "16/11/2026", "off": ""}, {"h": "٦/٧", "y": "١٤٤٨", "g": "17/11/2026", "off": ""}, {"h": "٦/٨", "y": "١٤٤٨", "g": "18/11/2026", "off": ""}, {"h": "٦/٩", "y": "١٤٤٨", "g": "19/11/2026", "off": ""}]}, {"id": "s1w14", "sem": 1, "n": 14, "name": "الرابع عشر", "note": "بعد إجازة الخريف", "days": [{"h": "٦/١٩", "y": "١٤٤٨", "g": "06/12/2026", "off": "إجازة إضافية"}, {"h": "٦/٢٠", "y": "١٤٤٨", "g": "07/12/2026", "off": ""}, {"h": "٦/٢١", "y": "١٤٤٨", "g": "08/12/2026", "off": ""}, {"h": "٦/٢٢", "y": "١٤٤٨", "g": "09/12/2026", "off": ""}, {"h": "٦/٢٣", "y": "١٤٤٨", "g": "10/12/2026", "off": ""}]}, {"id": "s1w15", "sem": 1, "n": 15, "name": "الخامس عشر", "note": "", "days": [{"h": "٦/٢٦", "y": "١٤٤٨", "g": "13/12/2026", "off": ""}, {"h": "٦/٢٧", "y": "١٤٤٨", "g": "14/12/2026", "off": ""}, {"h": "٦/٢٨", "y": "١٤٤٨", "g": "15/12/2026", "off": ""}, {"h": "٦/٢٩", "y": "١٤٤٨", "g": "16/12/2026", "off": ""}, {"h": "٧/١", "y": "١٤٤٨", "g": "17/12/2026", "off": ""}]}, {"id": "s1w16", "sem": 1, "n": 16, "name": "السادس عشر", "note": "", "days": [{"h": "٧/٤", "y": "١٤٤٨", "g": "20/12/2026", "off": ""}, {"h": "٧/٥", "y": "١٤٤٨", "g": "21/12/2026", "off": ""}, {"h": "٧/٦", "y": "١٤٤٨", "g": "22/12/2026", "off": ""}, {"h": "٧/٧", "y": "١٤٤٨", "g": "23/12/2026", "off": ""}, {"h": "٧/٨", "y": "١٤٤٨", "g": "24/12/2026", "off": ""}]}, {"id": "s1w17", "sem": 1, "n": 17, "name": "السابع عشر", "note": "", "days": [{"h": "٧/١١", "y": "١٤٤٨", "g": "27/12/2026", "off": ""}, {"h": "٧/١٢", "y": "١٤٤٨", "g": "28/12/2026", "off": ""}, {"h": "٧/١٣", "y": "١٤٤٨", "g": "29/12/2026", "off": ""}, {"h": "٧/١٤", "y": "١٤٤٨", "g": "30/12/2026", "off": ""}, {"h": "٧/١٥", "y": "١٤٤٨", "g": "31/12/2026", "off": ""}]}, {"id": "s1w18", "sem": 1, "n": 18, "name": "الثامن عشر", "note": "", "days": [{"h": "٧/١٨", "y": "١٤٤٨", "g": "03/01/2027", "off": ""}, {"h": "٧/١٩", "y": "١٤٤٨", "g": "04/01/2027", "off": ""}, {"h": "٧/٢٠", "y": "١٤٤٨", "g": "05/01/2027", "off": ""}, {"h": "٧/٢١", "y": "١٤٤٨", "g": "06/01/2027", "off": ""}, {"h": "٧/٢٢", "y": "١٤٤٨", "g": "07/01/2027", "off": ""}]}, {"id": "s1w19", "sem": 1, "n": 19, "name": "التاسع عشر", "note": "اختبار نهاية الفصل الدراسي الأول", "days": [{"h": "٧/٢٥", "y": "١٤٤٨", "g": "10/01/2027", "off": ""}, {"h": "٧/٢٦", "y": "١٤٤٨", "g": "11/01/2027", "off": ""}, {"h": "٧/٢٧", "y": "١٤٤٨", "g": "12/01/2027", "off": ""}, {"h": "٧/٢٨", "y": "١٤٤٨", "g": "13/01/2027", "off": ""}, {"h": "٧/٢٩", "y": "١٤٤٨", "g": "14/01/2027", "off": "إجازة إضافية"}]}, {"id": "s2w1", "sem": 2, "n": 1, "name": "الأول", "note": "بداية الفصل الثاني", "days": [{"h": "٨/٩", "y": "١٤٤٨", "g": "17/01/2027", "off": ""}, {"h": "٨/١٠", "y": "١٤٤٨", "g": "18/01/2027", "off": ""}, {"h": "٨/١١", "y": "١٤٤٨", "g": "19/01/2027", "off": ""}, {"h": "٨/١٢", "y": "١٤٤٨", "g": "20/01/2027", "off": ""}, {"h": "٨/١٣", "y": "١٤٤٨", "g": "21/01/2027", "off": ""}]}, {"id": "s2w2", "sem": 2, "n": 2, "name": "الثاني", "note": "", "days": [{"h": "٨/١٦", "y": "١٤٤٨", "g": "24/01/2027", "off": ""}, {"h": "٨/١٧", "y": "١٤٤٨", "g": "25/01/2027", "off": ""}, {"h": "٨/١٨", "y": "١٤٤٨", "g": "26/01/2027", "off": ""}, {"h": "٨/١٩", "y": "١٤٤٨", "g": "27/01/2027", "off": ""}, {"h": "٨/٢٠", "y": "١٤٤٨", "g": "28/01/2027", "off": ""}]}, {"id": "s2w3", "sem": 2, "n": 3, "name": "الثالث", "note": "", "days": [{"h": "٨/٢٣", "y": "١٤٤٨", "g": "31/01/2027", "off": ""}, {"h": "٨/٢٤", "y": "١٤٤٨", "g": "01/02/2027", "off": ""}, {"h": "٨/٢٥", "y": "١٤٤٨", "g": "02/02/2027", "off": ""}, {"h": "٨/٢٦", "y": "١٤٤٨", "g": "03/02/2027", "off": ""}, {"h": "٨/٢٧", "y": "١٤٤٨", "g": "04/02/2027", "off": ""}]}, {"id": "s2w4", "sem": 2, "n": 4, "name": "الرابع", "note": "", "days": [{"h": "٨/٣٠", "y": "١٤٤٨", "g": "07/02/2027", "off": ""}, {"h": "٩/١", "y": "١٤٤٨", "g": "08/02/2027", "off": ""}, {"h": "٩/٢", "y": "١٤٤٨", "g": "09/02/2027", "off": ""}, {"h": "٩/٣", "y": "١٤٤٨", "g": "10/02/2027", "off": ""}, {"h": "٩/٤", "y": "١٤٤٨", "g": "11/02/2027", "off": ""}]}, {"id": "s2w5", "sem": 2, "n": 5, "name": "الخامس", "note": "", "days": [{"h": "٩/٧", "y": "١٤٤٨", "g": "14/02/2027", "off": ""}, {"h": "٩/٨", "y": "١٤٤٨", "g": "15/02/2027", "off": ""}, {"h": "٩/٩", "y": "١٤٤٨", "g": "16/02/2027", "off": ""}, {"h": "٩/١٠", "y": "١٤٤٨", "g": "17/02/2027", "off": ""}, {"h": "٩/١١", "y": "١٤٤٨", "g": "18/02/2027", "off": ""}]}, {"id": "s2w6", "sem": 2, "n": 6, "name": "السادس", "note": "", "days": [{"h": "٩/١٤", "y": "١٤٤٨", "g": "21/02/2027", "off": "إجازة يوم التأسيس"}, {"h": "٩/١٥", "y": "١٤٤٨", "g": "22/02/2027", "off": "إجازة يوم التأسيس"}, {"h": "٩/١٦", "y": "١٤٤٨", "g": "23/02/2027", "off": ""}, {"h": "٩/١٧", "y": "١٤٤٨", "g": "24/02/2027", "off": ""}, {"h": "٩/١٨", "y": "١٤٤٨", "g": "25/02/2027", "off": ""}]}, {"id": "s2w7", "sem": 2, "n": 7, "name": "السابع", "note": "بعد إجازة عيد الفطر", "days": [{"h": "١٠/٦", "y": "١٤٤٨", "g": "14/03/2027", "off": ""}, {"h": "١٠/٧", "y": "١٤٤٨", "g": "15/03/2027", "off": ""}, {"h": "١٠/٨", "y": "١٤٤٨", "g": "16/03/2027", "off": ""}, {"h": "١٠/٩", "y": "١٤٤٨", "g": "17/03/2027", "off": ""}, {"h": "١٠/١٠", "y": "١٤٤٨", "g": "18/03/2027", "off": ""}]}, {"id": "s2w8", "sem": 2, "n": 8, "name": "الثامن", "note": "", "days": [{"h": "١٠/١٣", "y": "١٤٤٨", "g": "21/03/2027", "off": ""}, {"h": "١٠/١٤", "y": "١٤٤٨", "g": "22/03/2027", "off": ""}, {"h": "١٠/١٥", "y": "١٤٤٨", "g": "23/03/2027", "off": ""}, {"h": "١٠/١٦", "y": "١٤٤٨", "g": "24/03/2027", "off": ""}, {"h": "١٠/١٧", "y": "١٤٤٨", "g": "25/03/2027", "off": ""}]}, {"id": "s2w9", "sem": 2, "n": 9, "name": "التاسع", "note": "", "days": [{"h": "١٠/٢٠", "y": "١٤٤٨", "g": "28/03/2027", "off": ""}, {"h": "١٠/٢١", "y": "١٤٤٨", "g": "29/03/2027", "off": ""}, {"h": "١٠/٢٢", "y": "١٤٤٨", "g": "30/03/2027", "off": ""}, {"h": "١٠/٢٣", "y": "١٤٤٨", "g": "31/03/2027", "off": ""}, {"h": "١٠/٢٤", "y": "١٤٤٨", "g": "01/04/2027", "off": ""}]}, {"id": "s2w10", "sem": 2, "n": 10, "name": "العاشر", "note": "", "days": [{"h": "١٠/٢٧", "y": "١٤٤٨", "g": "04/04/2027", "off": ""}, {"h": "١٠/٢٨", "y": "١٤٤٨", "g": "05/04/2027", "off": ""}, {"h": "١٠/٢٩", "y": "١٤٤٨", "g": "06/04/2027", "off": ""}, {"h": "١٠/٣٠", "y": "١٤٤٨", "g": "07/04/2027", "off": ""}, {"h": "١١/١", "y": "١٤٤٨", "g": "08/04/2027", "off": ""}]}, {"id": "s2w11", "sem": 2, "n": 11, "name": "الحادي عشر", "note": "", "days": [{"h": "١١/٤", "y": "١٤٤٨", "g": "11/04/2027", "off": "إجازة إضافية"}, {"h": "١١/٥", "y": "١٤٤٨", "g": "12/04/2027", "off": ""}, {"h": "١١/٦", "y": "١٤٤٨", "g": "13/04/2027", "off": ""}, {"h": "١١/٧", "y": "١٤٤٨", "g": "14/04/2027", "off": ""}, {"h": "١١/٨", "y": "١٤٤٨", "g": "15/04/2027", "off": ""}]}, {"id": "s2w12", "sem": 2, "n": 12, "name": "الثاني عشر", "note": "", "days": [{"h": "١١/١١", "y": "١٤٤٨", "g": "18/04/2027", "off": ""}, {"h": "١١/١٢", "y": "١٤٤٨", "g": "19/04/2027", "off": ""}, {"h": "١١/١٣", "y": "١٤٤٨", "g": "20/04/2027", "off": ""}, {"h": "١١/١٤", "y": "١٤٤٨", "g": "21/04/2027", "off": ""}, {"h": "١١/١٥", "y": "١٤٤٨", "g": "22/04/2027", "off": ""}]}, {"id": "s2w13", "sem": 2, "n": 13, "name": "الثالث عشر", "note": "", "days": [{"h": "١١/١٨", "y": "١٤٤٨", "g": "25/04/2027", "off": ""}, {"h": "١١/١٩", "y": "١٤٤٨", "g": "26/04/2027", "off": ""}, {"h": "١١/٢٠", "y": "١٤٤٨", "g": "27/04/2027", "off": ""}, {"h": "١١/٢١", "y": "١٤٤٨", "g": "28/04/2027", "off": ""}, {"h": "١١/٢٢", "y": "١٤٤٨", "g": "29/04/2027", "off": ""}]}, {"id": "s2w14", "sem": 2, "n": 14, "name": "الرابع عشر", "note": "", "days": [{"h": "١١/٢٥", "y": "١٤٤٨", "g": "02/05/2027", "off": ""}, {"h": "١١/٢٦", "y": "١٤٤٨", "g": "03/05/2027", "off": ""}, {"h": "١١/٢٧", "y": "١٤٤٨", "g": "04/05/2027", "off": ""}, {"h": "١١/٢٨", "y": "١٤٤٨", "g": "05/05/2027", "off": ""}, {"h": "١١/٢٩", "y": "١٤٤٨", "g": "06/05/2027", "off": ""}]}, {"id": "s2w15", "sem": 2, "n": 15, "name": "الخامس عشر", "note": "بعد إجازة عيد الأضحى", "days": [{"h": "١٢/١٧", "y": "١٤٤٨", "g": "23/05/2027", "off": ""}, {"h": "١٢/١٨", "y": "١٤٤٨", "g": "24/05/2027", "off": ""}, {"h": "١٢/١٩", "y": "١٤٤٨", "g": "25/05/2027", "off": ""}, {"h": "١٢/٢٠", "y": "١٤٤٨", "g": "26/05/2027", "off": ""}, {"h": "١٢/٢١", "y": "١٤٤٨", "g": "27/05/2027", "off": ""}]}, {"id": "s2w16", "sem": 2, "n": 16, "name": "السادس عشر", "note": "", "days": [{"h": "١٢/٢٤", "y": "١٤٤٨", "g": "30/05/2027", "off": ""}, {"h": "١٢/٢٥", "y": "١٤٤٨", "g": "31/05/2027", "off": ""}, {"h": "١٢/٢٦", "y": "١٤٤٨", "g": "01/06/2027", "off": ""}, {"h": "١٢/٢٧", "y": "١٤٤٨", "g": "02/06/2027", "off": ""}, {"h": "١٢/٢٨", "y": "١٤٤٨", "g": "03/06/2027", "off": ""}]}, {"id": "s2w17", "sem": 2, "n": 17, "name": "السابع عشر", "note": "", "days": [{"h": "١/١", "y": "١٤٤٩", "g": "06/06/2027", "off": ""}, {"h": "١/٢", "y": "١٤٤٩", "g": "07/06/2027", "off": ""}, {"h": "١/٣", "y": "١٤٤٩", "g": "08/06/2027", "off": ""}, {"h": "١/٤", "y": "١٤٤٩", "g": "09/06/2027", "off": ""}, {"h": "١/٥", "y": "١٤٤٩", "g": "10/06/2027", "off": ""}]}, {"id": "s2w18", "sem": 2, "n": 18, "name": "الثامن عشر", "note": "", "days": [{"h": "١/٨", "y": "١٤٤٩", "g": "13/06/2027", "off": ""}, {"h": "١/٩", "y": "١٤٤٩", "g": "14/06/2027", "off": ""}, {"h": "١/١٠", "y": "١٤٤٩", "g": "15/06/2027", "off": ""}, {"h": "١/١١", "y": "١٤٤٩", "g": "16/06/2027", "off": ""}, {"h": "١/١٢", "y": "١٤٤٩", "g": "17/06/2027", "off": ""}]}, {"id": "s2w19", "sem": 2, "n": 19, "name": "التاسع عشر", "note": "", "days": [{"h": "١/١٥", "y": "١٤٤٩", "g": "20/06/2027", "off": ""}, {"h": "١/١٦", "y": "١٤٤٩", "g": "21/06/2027", "off": ""}, {"h": "١/١٧", "y": "١٤٤٩", "g": "22/06/2027", "off": ""}, {"h": "١/١٨", "y": "١٤٤٩", "g": "23/06/2027", "off": ""}, {"h": "١/١٩", "y": "١٤٤٩", "g": "24/06/2027", "off": ""}]}];
+const SEED={"main": {"kingdom": "المملكة العربية السعودية", "ministry": "وزارة التعليم", "directorate": "الإدارة العامة للتعليم بالمنطقة الشرقية", "school": "مدارس معالي العلوم الأهلية", "vision": "رؤيتنا: أن نكون معيار التميز للمدارس بجيل مبدع علميًا،\nمعتز بدينه ووطنه، مواكبًا لمستجدات العصر.", "mission": "رسالتنا: تقديم خدمات تربوية وتعليمية ذات جودة عالية وترسيخ\nالقيم الأخلاقية والإيجابية وتحقيق الوعي الفكري.", "values": "القيم: المواطنة – الإتقان – العدل – التنمية الذاتية -\nالعمل بروح الفريق – المسؤولية الاجتماعية.", "grade": "الرابع", "leader": "نورة المطيري", "deputy": "منى الغامدي", "principal": "نورة الدوسري", "dayPeriods": [7, 7, 7, 7, 6], "activeWeek": "s1w6"}, "teachers": {"list": [{"key": "t1", "name": "معلمة الرياضيات", "subjects": ["رياضيات"]}, {"key": "t2", "name": "معلمة لغتي", "subjects": ["لغتي"]}, {"key": "t3", "name": "معلمة الدراسات الإسلامية", "subjects": ["الدراسات الاسلامية"]}, {"key": "t4", "name": "معلمة العلوم", "subjects": ["علوم"]}, {"key": "t5", "name": "معلمة اللغة الإنجليزية", "subjects": ["E(Topgoal)", "E(Science)", "E(Math)", "English"]}, {"key": "t6", "name": "معلمة الدراسات الاجتماعية", "subjects": ["الدراسات الاجتماعية"]}, {"key": "t7", "name": "معلمة المهارات", "subjects": ["المهارات الحياتية", "المهارات الرقمية"]}, {"key": "t8", "name": "معلمة التربية البدنية", "subjects": ["التربية البدنية"]}, {"key": "t9", "name": "معلمة الفنية", "subjects": ["فنية"]}, {"key": "t10", "name": "معلمة النشاط", "subjects": ["نشاط"]}]}, "timetable": {"d0-p1": "رياضيات", "d0-p2": "الدراسات الاسلامية", "d0-p3": "لغتي", "d0-p4": "E(Topgoal)", "d0-p5": "علوم", "d0-p6": "E(Science)", "d0-p7": "المهارات الحياتية", "d1-p1": "E(Topgoal)", "d1-p2": "رياضيات", "d1-p3": "لغتي", "d1-p4": "التربية البدنية", "d1-p5": "الدراسات الاسلامية", "d1-p6": "E(Math)", "d1-p7": "المهارات الرقمية", "d2-p1": "لغتي", "d2-p2": "علوم", "d2-p3": "الدراسات الاسلامية", "d2-p4": "رياضيات", "d2-p5": "الدراسات الاجتماعية", "d2-p6": "English", "d2-p7": "فنية", "d3-p1": "الدراسات الاسلامية", "d3-p2": "علوم", "d3-p3": "رياضيات", "d3-p4": "لغتي", "d3-p5": "التربية البدنية", "d3-p6": "رياضيات", "d3-p7": "نشاط", "d4-p1": "رياضيات", "d4-p2": "لغتي", "d4-p3": "علوم", "d4-p4": "English", "d4-p5": "الدراسات الاسلامية", "d4-p6": "الدراسات الاجتماعية"}, "week": {"id": "s1w6", "value": "الاحترام"}, "cells": {"d0-p1": {"lesson": "الطرح", "homework": ""}, "d0-p2": {"lesson": "تلاوة سورة الواقعة من آية ٦٨ إلى آية ٩٦", "homework": ""}, "d0-p3": {"lesson": "الهمزة المتطرفة", "homework": ""}, "d0-p4": {"lesson": "U1 (Word Work + Integrated Learning)", "homework": ""}, "d0-p5": {"lesson": "الحيوانات الفقارية ( استكشف )", "homework": ""}, "d0-p6": {"lesson": "Healthy pets", "homework": "page number 12"}, "d0-p7": {"lesson": "العنايه بالفم والأسنان", "homework": ""}, "d1-p1": {"lesson": "الدرس : U1 review", "homework": ""}, "d1-p2": {"lesson": "الطرح مع وجود الارقام", "homework": ""}, "d1-p3": {"lesson": "تابع درس الهمزة المتطرفة", "homework": ""}, "d1-p5": {"lesson": "الحديث/ النبي أفضل الناس - التقويم", "homework": ""}, "d1-p6": {"lesson": "Time problems", "homework": ""}, "d1-p7": {"lesson": "تنسيق النص", "homework": ""}, "d2-p1": {"lesson": "تطبيق أنشطة الهمزة المتطرفة", "homework": ""}, "d2-p2": {"lesson": "ما الفقاريات", "homework": ""}, "d2-p3": {"lesson": "الفقه/ الماء النجس - التقويم", "homework": ""}, "d2-p4": {"lesson": "تابع الطرح مع وجود الأرقام", "homework": ""}, "d2-p5": {"lesson": "اختبار قصير في الوحدة الأولى", "homework": ""}, "d2-p6": {"lesson": "الدرس : U2 (Vocabulary)", "homework": ""}, "d3-p1": {"lesson": "الحديث / من فضائل النبي / الواجب : حفظ حديث أبي هريرة كاملاً صفحة ٥٤ + التقويم", "homework": ""}, "d3-p2": {"lesson": "هل هناك فقاريات أخرى ؟", "homework": "الواجب/ سؤال ٢ صفحة ٧٤"}, "d3-p3": {"lesson": "اختبار الفصل + الاختبار التراكمي", "homework": ""}, "d3-p4": {"lesson": "مراجعة + إملاء اختباري في الهمزة المتطرفة", "homework": ""}, "d3-p6": {"lesson": "اختبار الفصل + الاختبار التراكمي", "homework": ""}, "d4-p1": {"lesson": "اختبر نفسك", "homework": ""}, "d4-p2": {"lesson": "حل ورقة عمل الهمزة المتطرفة", "homework": ""}, "d4-p3": {"lesson": "ما الثدييات + مراجعة الدرس", "homework": "عمل مطوية عن الحيوانات الفقارية"}, "d4-p4": {"lesson": "الدرس : U1 Exam", "homework": ""}, "d4-p5": {"lesson": "مراجعة سورة المدثر من آية ١ إلى آية ١٦", "homework": ""}, "d4-p6": {"lesson": "المصادر", "homework": ""}}};
+const LOGO_R="data:image/jpeg;base64,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";
+const LOGO_L="data:image/jpeg;base64,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";
+
 const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
 const PER=['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة','السابعة','الثامنة'];
 const DAYCOL=['#7466bd','#c2551b','#1d1d1d','#1d1d1d','#1c3d72'];
-const DEF={kingdom:'المملكة العربية السعودية',ministry:'وزارة التعليم',directorate:'',school:'',vision:'',mission:'',values:'',
-  weekName:'',grade:'',from:'',to:'',weeklyValue:'',leader:'',deputy:'',principal:'',
-  dates:['','','','',''],dayPeriods:[7,7,7,7,7],logoRight:'',logoLeft:''};
+const SEMN={1:'الفصل الأول',2:'الفصل الثاني'};
+const DEF={kingdom:'',ministry:'',directorate:'',school:'',vision:'',mission:'',values:'',grade:'',leader:'',deputy:'',principal:'',dayPeriods:[7,7,7,7,7],logoRight:'',logoLeft:'',activeWeek:'s1w1'};
+const W=Object.fromEntries(CAL.map(w=>[w.id,w]));
 
-let PASS='';
-async function api(op,body){
-  const r=await fetch('/api?op='+op,{method:'POST',headers:{'content-type':'application/json','x-pass':PASS},body:JSON.stringify(body)});
-  if(!r.ok)throw new Error('api '+r.status); return r.json();
-}
-async function load(){
-  const r=await fetch('/api'+(me.isOwner?'?log=1':''),{headers:{'x-pass':PASS},cache:'no-store'});
-  if(r.status===401)throw Object.assign(new Error('pass'),{pass:true});
-  if(!r.ok)throw new Error('load');
-  const d=await r.json();
-  cfg={...DEF,...(d.main||{})}; teachers=(d.teachers&&d.teachers.list)||[]; cells=d.cells||{};
-  if(d.log)logs=d.log;
-  loaded.cfg=loaded.cells=true; return d;
-}
-async function refresh(){try{await load();renderAll()}catch(e){}}
-
-const SEED={"cells": {"d0-p1": {"subject": "رياضيات", "lesson": "الطرح", "homework": "", "day": 0, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d0-p2": {"subject": "الدراسات الاسلامية", "lesson": "تلاوة سورة الواقعة من آية ٦٨ إلى آية ٩٦", "homework": "", "day": 0, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d0-p3": {"subject": "لغتي", "lesson": "الهمزة المتطرفة", "homework": "", "day": 0, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d0-p4": {"subject": "E(Topgoal)", "lesson": "U1 (Word Work + Integrated Learning)", "homework": "", "day": 0, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d0-p5": {"subject": "علوم", "lesson": "الحيوانات الفقارية ( استكشف )", "homework": "", "day": 0, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d0-p6": {"subject": "E(Science)", "lesson": "Healthy pets", "homework": "page number 12", "day": 0, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d0-p7": {"subject": "المهارات الحياتية", "lesson": "العنايه بالفم والأسنان", "homework": "", "day": 0, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d1-p1": {"subject": "E(Topgoal)", "lesson": "الدرس : U1 review", "homework": "", "day": 1, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d1-p2": {"subject": "رياضيات", "lesson": "الطرح مع وجود الارقام", "homework": "", "day": 1, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d1-p3": {"subject": "لغتي", "lesson": "تابع درس الهمزة المتطرفة", "homework": "", "day": 1, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d1-p4": {"subject": "التربية البدنية", "lesson": "", "homework": "", "day": 1, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d1-p5": {"subject": "الدراسات الاسلامية", "lesson": "الحديث/ النبي أفضل الناس - التقويم", "homework": "", "day": 1, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d1-p6": {"subject": "E(Math)", "lesson": "Time problems", "homework": "", "day": 1, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d1-p7": {"subject": "المهارات الرقمية", "lesson": "تنسيق النص", "homework": "", "day": 1, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d2-p1": {"subject": "لغتي", "lesson": "تطبيق أنشطة الهمزة المتطرفة", "homework": "", "day": 2, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d2-p2": {"subject": "علوم", "lesson": "ما الفقاريات", "homework": "", "day": 2, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d2-p3": {"subject": "الدراسات الاسلامية", "lesson": "الفقه/ الماء النجس - التقويم", "homework": "", "day": 2, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d2-p4": {"subject": "رياضيات", "lesson": "تابع الطرح مع وجود الأرقام", "homework": "", "day": 2, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d2-p5": {"subject": "الدراسات الاجتماعية", "lesson": "اختبار قصير في الوحدة الأولى", "homework": "", "day": 2, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d2-p6": {"subject": "English", "lesson": "الدرس : U2 (Vocabulary)", "homework": "", "day": 2, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d2-p7": {"subject": "فنية", "lesson": "", "homework": "", "day": 2, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d3-p1": {"subject": "الدراسات الاسلامية", "lesson": "الحديث / من فضائل النبي / الواجب : حفظ حديث أبي هريرة كاملاً صفحة ٥٤ + التقويم", "homework": "", "day": 3, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d3-p2": {"subject": "علوم", "lesson": "هل هناك فقاريات أخرى ؟", "homework": "الواجب/ سؤال ٢ صفحة ٧٤", "day": 3, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d3-p3": {"subject": "رياضيات", "lesson": "اختبار الفصل + الاختبار التراكمي", "homework": "", "day": 3, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d3-p4": {"subject": "لغتي", "lesson": "مراجعة + إملاء اختباري في الهمزة المتطرفة", "homework": "", "day": 3, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d3-p5": {"subject": "التربية البدنية", "lesson": "", "homework": "", "day": 3, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d3-p6": {"subject": "رياضيات", "lesson": "اختبار الفصل + الاختبار التراكمي", "homework": "", "day": 3, "period": 6, "updatedAt": 0, "updatedBy": "owner"}, "d3-p7": {"subject": "نشاط", "lesson": "", "homework": "", "day": 3, "period": 7, "updatedAt": 0, "updatedBy": "owner"}, "d4-p1": {"subject": "رياضيات", "lesson": "اختبر نفسك", "homework": "", "day": 4, "period": 1, "updatedAt": 0, "updatedBy": "owner"}, "d4-p2": {"subject": "لغتي", "lesson": "حل ورقة عمل الهمزة المتطرفة", "homework": "", "day": 4, "period": 2, "updatedAt": 0, "updatedBy": "owner"}, "d4-p3": {"subject": "علوم", "lesson": "ما الثدييات + مراجعة الدرس", "homework": "عمل مطوية عن الحيوانات الفقارية", "day": 4, "period": 3, "updatedAt": 0, "updatedBy": "owner"}, "d4-p4": {"subject": "English", "lesson": "الدرس : U1 Exam", "homework": "", "day": 4, "period": 4, "updatedAt": 0, "updatedBy": "owner"}, "d4-p5": {"subject": "الدراسات الاسلامية", "lesson": "مراجعة سورة المدثر من آية ١ إلى آية ١٦", "homework": "", "day": 4, "period": 5, "updatedAt": 0, "updatedBy": "owner"}, "d4-p6": {"subject": "الدراسات الاجتماعية", "lesson": "المصادر", "homework": "", "day": 4, "period": 6, "updatedAt": 0, "updatedBy": "owner"}}, "main": {"kingdom": "المملكة العربية السعودية", "ministry": "وزارة التعليم", "directorate": "الإدارة العامة للتعليم بالمنطقة الشرقية", "school": "مدارس معالي العلوم الأهلية", "vision": "رؤيتنا: أن نكون معيار التميز للمدارس بجيل مبدع علميًا،\nمعتز بدينه ووطنه، مواكبًا لمستجدات العصر.", "mission": "رسالتنا: تقديم خدمات تربوية وتعليمية ذات جودة عالية وترسيخ\nالقيم الأخلاقية والإيجابية وتحقيق الوعي الفكري.", "values": "القيم: المواطنة – الإتقان – العدل – التنمية الذاتية -\nالعمل بروح الفريق – المسؤولية الاجتماعية.", "weekName": "السادس", "grade": "الرابع", "from": "١٤٤٨/٤/١٦", "to": "١٤٤٨/٤/٢٠", "weeklyValue": "الاحترام", "leader": "نورة المطيري", "deputy": "منى الغامدي", "principal": "نورة الدوسري", "dates": ["٤/١٦", "٤/١٧", "٤/١٨", "٤/١٩", "٤/٢٠"], "dayPeriods": [7, 7, 7, 7, 6], "logoRight": "", "logoLeft": ""}, "teachers": {"list": [{"key": "t1", "name": "معلمة الرياضيات", "subjects": ["رياضيات"]}, {"key": "t2", "name": "معلمة لغتي", "subjects": ["لغتي"]}, {"key": "t3", "name": "معلمة الدراسات الإسلامية", "subjects": ["الدراسات الاسلامية"]}, {"key": "t4", "name": "معلمة العلوم", "subjects": ["علوم"]}, {"key": "t5", "name": "معلمة اللغة الإنجليزية", "subjects": ["E(Topgoal)", "E(Science)", "E(Math)", "English"]}, {"key": "t6", "name": "معلمة الدراسات الاجتماعية", "subjects": ["الدراسات الاجتماعية"]}, {"key": "t7", "name": "معلمة المهارات", "subjects": ["المهارات الحياتية", "المهارات الرقمية"]}, {"key": "t8", "name": "معلمة التربية البدنية", "subjects": ["التربية البدنية"]}, {"key": "t9", "name": "معلمة الفنية", "subjects": ["فنية"]}, {"key": "t10", "name": "معلمة النشاط", "subjects": ["نشاط"]}]}};
-let me={isOwner:false,teacherKey:null};
-let cfg={...DEF}, teachers=[], cells={}, logs=[];
-let view='plan', cur=null, loaded={cfg:false,cells:false};
+let PASS='', ROLE=null, me={isOwner:false,teacherKey:null};
+let cfg={...DEF}, teachers=[], timetable={}, cells={}, weekMeta={}, logs=[], weekId=null, viewWeek=null;
+let view='plan', cur=null, loaded=false;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
 const key=(d,p)=>`d${d}-p${p}`;
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2200)}
 function ask(msg){return new Promise(r=>{const d=$('askDlg');$('askMsg').textContent=msg;d.showModal();
   $('askYes').onclick=()=>{d.close();r(true)};$('askNo').onclick=()=>{d.close();r(false)};})}
+const wLabel=id=>W[id]?`الأسبوع ${W[id].name} – ${SEMN[W[id].sem]}`:'';
 
-function myTeacher(){return me.teacherKey?teachers.find(t=>t.key===me.teacherKey)||null:null}
-function canEditCell(d,p){
-  if(me.isOwner)return true;
-  const t=myTeacher(); if(!t)return false;
-  const s=norm(cells[key(d,p)]?.subject);
-  return !!s && (t.subjects||[]).some(x=>norm(x)===s);
+/* ---------- API ---------- */
+async function api(op,body){
+  const r=await fetch('/api?op='+op,{method:'POST',headers:{'content-type':'application/json','x-pass':PASS},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('api '+r.status); return r.json();
 }
-function unseenKeys(){const s=new Set();logs.forEach(l=>{if(!l.seen)s.add(l.cell)});return s}
+async function load(){
+  const q=new URLSearchParams(); if(viewWeek)q.set('week',viewWeek); if(me.isOwner)q.set('log','1');
+  const r=await fetch('/api?'+q,{headers:{'x-pass':PASS},cache:'no-store'});
+  if(r.status===401)throw Object.assign(new Error('pass'),{pass:true});
+  if(!r.ok)throw new Error('load');
+  const d=await r.json();
+  cfg={...DEF,...(d.main||{})}; teachers=(d.teachers&&d.teachers.list)||[]; timetable=d.timetable||{};
+  cells=d.cells||{}; weekMeta=d.week||{}; weekId=d.weekId; if(d.log)logs=d.log; ROLE=d.role;
+  loaded=true; return d;
+}
+async function refresh(){try{await load();renderAll()}catch(e){}}
+
+/* ---------- helpers ---------- */
+function myTeacher(){return me.teacherKey?teachers.find(t=>t.key===me.teacherKey)||null:null}
+const subjectOf=k=>norm(cells[k]?.subject??timetable[k]??'');
+const isOff=d=>!!(W[weekId]?.days[d]?.off);
+function canEditCell(d,p){
+  if(isOff(d))return false;
+  if(me.isOwner)return true;
+  const t=myTeacher(); if(!t||weekId!==cfg.activeWeek)return false;
+  const s=subjectOf(key(d,p));
+  return !!s&&(t.subjects||[]).some(x=>norm(x)===s);
+}
+function unseenKeys(){const s=new Set();logs.forEach(l=>{if(!l.seen&&l.week===weekId)s.add(l.cell)});return s}
+
+/* ---------- Week bar ---------- */
+function renderWeekBar(){
+  const bar=$('weekBar'); const act=cfg.activeWeek, w=W[weekId];
+  if(!me.isOwner){
+    bar.innerHTML=`<div class="wk"><b>${esc(wLabel(act))}</b><span class="active-tag">الأسبوع النشط</span></div>`;return;
+  }
+  const opts=[1,2].map(s=>`<optgroup label="${SEMN[s]}">${CAL.filter(x=>x.sem===s).map(x=>`<option value="${x.id}" ${x.id===weekId?'selected':''}>الأسبوع ${x.name} (${x.days[0].h} – ${x.days[4].h})${x.id===act?' ✓ نشط':''}</option>`).join('')}</optgroup>`).join('');
+  const i=CAL.findIndex(x=>x.id===weekId);
+  bar.innerHTML=`<div class="wk">
+    <button class="btn" id="wPrev" ${i<=0?'disabled':''} aria-label="الأسبوع السابق">→</button>
+    <select id="wSel" aria-label="اختيار الأسبوع">${opts}</select>
+    <button class="btn" id="wNext" ${i>=CAL.length-1?'disabled':''} aria-label="الأسبوع التالي">←</button>
+    ${weekId===act?'<span class="active-tag">الأسبوع النشط</span>':'<button class="btn primary" id="wAct">تعيينه أسبوعًا نشطًا</button>'}
+  </div>
+  <div class="wk" style="margin-top:.6rem">
+    <label class="f" style="margin:0;flex:1;min-width:180px">القيمة الأسبوعية<input id="wVal" value="${esc(weekMeta.value||'')}"></label>
+    <button class="btn" id="wValSave" style="align-self:flex-end">حفظ القيمة</button>
+  </div>
+  ${w&&w.note?`<div class="hint" style="margin-top:.4rem">📌 ${esc(w.note)}</div>`:''}`;
+  const go=id=>{viewWeek=id;refresh()};
+  $('wSel').onchange=e=>go(e.target.value);
+  $('wPrev').onclick=()=>go(CAL[i-1].id); $('wNext').onclick=()=>go(CAL[i+1].id);
+  if($('wAct'))$('wAct').onclick=async()=>{
+    if(!(await ask(`تعيين ${wLabel(weekId)} أسبوعًا نشطًا؟ ستتمكن المعلمات من الإدخال فيه.`)))return;
+    try{await api('set',{key:'main',data:{...cfg,activeWeek:weekId}});await refresh();toast('تم تعيين الأسبوع النشط ✓')}catch(e){toast('تعذّر الحفظ')}
+  };
+  $('wValSave').onclick=async()=>{
+    try{await api('set',{key:'week/'+weekId,data:{...weekMeta,value:$('wVal').value.trim()}});await refresh();toast('تم الحفظ ✓')}catch(e){toast('تعذّر الحفظ')}
+  };
+}
 
 /* ---------- Sheet ---------- */
 function renderSheet(){
-  const c=cfg, chg=me.isOwner?unseenKeys():new Set();
-  const logo=(src,alt)=>src?`<div class="logo"><img src="${esc(src)}" alt="${alt}"></div>`:`<div class="logo ${me.isOwner?'empty':''}">${me.isOwner?'الشعار':''}</div>`;
+  const c=cfg, w=W[weekId]; if(!w)return;
+  const chg=me.isOwner?unseenKeys():new Set();
+  const logo=(src,alt)=>`<div class="logo">${src?`<img src="${esc(src)}" alt="${alt}">`:''}</div>`;
   let rows='';
   DAYS.forEach((dn,d)=>{
+    const day=w.days[d];
+    if(day.off){
+      rows+=`<tr class="first"><td class="day">${esc(dn)}<br>${esc(day.h)}</td><td colspan="4" class="off">${esc(day.off)}</td></tr>`;return;
+    }
     const n=(c.dayPeriods||DEF.dayPeriods)[d]||7;
     for(let p=1;p<=n;p++){
       const k=key(d,p), v=cells[k]||{}, ed=canEditCell(d,p);
-      const cls=[ed?'edit':'', chg.has(k)?'chg':'', (!me.isOwner&&ed)?'mine':''].join(' ');
+      const cls=[ed?'edit':'',chg.has(k)?'chg':'',(!me.isOwner&&ed)?'mine':''].join(' ');
       rows+=`<tr class="${p===1?'first':''}">`;
-      if(p===1)rows+=`<td class="day" rowspan="${n}">${esc(dn)}<br>${esc((c.dates||[])[d]||'')}</td>`;
+      if(p===1)rows+=`<td class="day" rowspan="${n}">${esc(dn)}<br>${esc(day.h)}</td>`;
       rows+=`<td class="per">${PER[p-1]}</td>`
-        +`<td class="sub ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(v.subject)}</td>`
+        +`<td class="sub ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(subjectOf(k))}</td>`
         +`<td class="les ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(v.lesson)}</td>`
         +`<td class="hw ${cls}" data-k="${d},${p}" style="color:${DAYCOL[d]}" dir="auto">${esc(v.homework)}</td></tr>`;
     }
   });
+  const f=w.days[0], l=w.days[4];
   $('sheet').innerHTML=`<div class="frame">
-    <div class="hd">${logo(c.logoRight,'شعار الوزارة')}
+    <div class="hd">${logo(c.logoRight||LOGO_R,'شعار وزارة التعليم')}
       <div class="hdc">${[c.kingdom,c.ministry,c.directorate,c.school].filter(Boolean).map(esc).join('<br>')}</div>
-      ${logo(c.logoLeft,'شعار المدرسة')}</div>
+      ${logo(c.logoLeft||LOGO_L,'شعار المدرسة')}</div>
     <div class="boxes"><div class="box">${esc(c.vision)}</div><div class="box">${esc(c.mission)}</div><div class="box">${esc(c.values)}</div></div>
   </div>
-  <div class="banner"><div class="bmain">خطة الأسبوع ${esc(c.weekName)} – للصف ${esc(c.grade)}&nbsp;&nbsp; ${esc(c.from)}هـ إلى ${esc(c.to)}هـ</div>
-    <div class="bval">القيمة الأسبوعية: ${esc(c.weeklyValue)}</div></div>
+  <div class="banner"><div class="bmain">خطة الأسبوع ${esc(w.name)} – للصف ${esc(c.grade)}&nbsp;&nbsp; ${f.y}/${f.h}هـ إلى ${l.y}/${l.h}هـ</div>
+    <div class="bval">القيمة الأسبوعية: ${esc(weekMeta.value||'')}</div></div>
   <table><colgroup><col style="width:9%"><col style="width:8%"><col style="width:15%"><col style="width:40%"><col style="width:28%"></colgroup>
     <thead><tr><th>اليوم</th><th>الحصة</th><th>المادة</th><th>الدرس</th><th>الواجب</th></tr></thead>
     <tbody>${rows}</tbody></table>
   <div class="ft"><span>رائدة الصف: ${esc(c.leader)}</span><span>الوكيلة: ${esc(c.deputy)}</span><span>المديرة: ${esc(c.principal)}</span></div>`;
-  fitSheet();
+  requestAnimationFrame(fitSheet);
   const t=myTeacher();
-  $('planHint').textContent=me.isOwner?'اضغطي على أي حصة لتعديل المادة أو الدرس أو الواجب.'
-    :t?'الحصص المظللة بالأزرق هي حصصك، اضغطي عليها للإدخال.':'';
+  $('planHint').textContent=me.isOwner?'اضغطي على أي حصة لتعديلها.':t?'الحصص المظللة بالأزرق هي حصصك، اضغطي عليها للإدخال.':'';
 }
 function fitSheet(){
-  const w=$('sheetWrap').clientWidth||794, s=Math.min(1,w/794);
+  const wrap=$('sheetWrap'); const w=wrap.parentElement.clientWidth||794, s=Math.min(1,w/794);
   $('sheetScale').style.transform=`scale(${s})`;
-  $('sheetWrap').style.height=($('sheet').offsetHeight*s)+'px';
-  $('sheetWrap').style.width=(794*s)+'px';
+  wrap.style.height=($('sheet').offsetHeight*s)+'px'; wrap.style.width=(794*s)+'px';
 }
 addEventListener('resize',fitSheet);
 $('sheet').addEventListener('click',e=>{
@@ -346,52 +385,58 @@ $('sheet').addEventListener('click',e=>{
 
 /* ---------- Cell dialog ---------- */
 function openCell(d,p){
-  cur={d,p}; const v=cells[key(d,p)]||{};
-  $('cellTitle').textContent=`${DAYS[d]} – الحصة ${PER[p-1]}${v.subject?' – '+v.subject:''}`;
+  const k=key(d,p); cur={d,p,week:weekId}; const v=cells[k]||{};
+  $('cellTitle').textContent=`${DAYS[d]} ${W[weekId].days[d].h} – الحصة ${PER[p-1]}${subjectOf(k)?' – '+subjectOf(k):''}`;
   $('subWrap').classList.toggle('hidden',!me.isOwner);
-  $('c_sub').value=v.subject||''; $('c_les').value=v.lesson||''; $('c_hw').value=v.homework||'';
-  const subs=[...new Set(Object.values(cells).map(c=>norm(c.subject)).filter(Boolean))];
+  $('c_sub').value=subjectOf(k); $('c_all').checked=!('subject' in v);
+  $('c_les').value=v.lesson||''; $('c_hw').value=v.homework||'';
+  const subs=[...new Set([...Object.values(timetable),...teachers.flatMap(t=>t.subjects||[])].map(norm).filter(Boolean))];
   $('subList').innerHTML=subs.map(s=>`<option value="${esc(s)}">`).join('');
   $('cellDlg').showModal();
 }
 $('c_cancel').onclick=()=>$('cellDlg').close();
 $('c_save').onclick=async()=>{
-  if(!cur)return; const {d,p}=cur, k=key(d,p), old=cells[k]||{};
-  const nv={subject:me.isOwner?norm($('c_sub').value):(old.subject||''),lesson:$('c_les').value.trim(),homework:$('c_hw').value.trim()};
-  if(nv.subject===(old.subject||'')&&nv.lesson===(old.lesson||'')&&nv.homework===(old.homework||'')){$('cellDlg').close();return}
+  if(!cur)return; const {d,p,week}=cur, k=key(d,p), old=cells[k]||{};
+  const lesson=$('c_les').value.trim(), homework=$('c_hw').value.trim();
+  const oldSub=subjectOf(k), newSub=me.isOwner?norm($('c_sub').value):oldSub;
+  const t=myTeacher();
+  const data={lesson,homework,updatedAt:Date.now(),updatedBy:me.isOwner?'owner':(t?.key||'')};
   $('c_save').disabled=true;
   try{
-    const t=myTeacher();
-    await api('set',{key:'cell/'+k,data:{...nv,day:d,period:p,updatedAt:Date.now(),updatedBy:me.isOwner?'owner':(t?.key||'')}});
-    if(!me.isOwner){
-      await api('log',{data:{cell:k,day:d,period:p,subject:nv.subject,teacherKey:t?.key||'',teacherName:t?.name||'',
-        oldLesson:old.lesson||'',newLesson:nv.lesson,oldHw:old.homework||'',newHw:nv.homework,
+    if(me.isOwner&&$('c_all').checked){
+      if(newSub!==norm(timetable[k]))await api('set',{key:'timetable',data:{...timetable,[k]:newSub}});
+    }else if(me.isOwner){data.subject=newSub}
+    else if('subject' in old){data.subject=old.subject}
+    await api('set',{key:`cell/${week}/${k}`,data});
+    if(!me.isOwner&&(lesson!==(old.lesson||'')||homework!==(old.homework||''))){
+      await api('log',{data:{week,cell:k,day:d,period:p,subject:newSub,teacherKey:t?.key||'',teacherName:t?.name||'',
+        oldLesson:old.lesson||'',newLesson:lesson,oldHw:old.homework||'',newHw:homework,
         kind:(old.lesson||old.homework)?'تعديل':'إدخال',at:Date.now(),seen:false}});
     }
-    cells[k]={...old,...nv}; $('cellDlg').close(); toast('تم الحفظ ✓'); renderAll();
-  }catch(e){toast(e?.code==='invalid_argument'?'لا تملكين صلاحية التعديل':'تعذّر الحفظ، حاولي مرة أخرى')}
+    $('cellDlg').close(); toast('تم الحفظ ✓'); await refresh();
+  }catch(e){toast('تعذّر الحفظ، حاولي مرة أخرى')}
   finally{$('c_save').disabled=false}
 };
 
 /* ---------- Mine ---------- */
 function renderMine(){
   const el=$('view-mine');
-  if(me.isOwner){
-    el.innerHTML=`<div class="panel"><h2>أنتِ المشرفة</h2><p>تستطيعين تعديل كل الحصص من تبويب «الخطة»، ومتابعة إدخالات المعلمات من «التعديلات». هذه الصفحة للمعلمات: كل معلمة ترى فيها حصص موادها فقط.</p></div>`;return;
-  }
+  if(me.isOwner){el.innerHTML=`<div class="panel"><h2>أنتِ المشرفة</h2><p>تعدّلين كل الحصص من تبويب «الخطة»، وتختارين الأسبوع النشط من أعلاها، وتتابعين إدخالات المعلمات من «التعديلات».</p></div>`;return}
   const t=myTeacher();
   if(!t){el.innerHTML='<p class="msg">اسمك غير موجود في قائمة المعلمات، تواصلي مع المشرفة.</p>';return}
-  let html=`<div class="panel"><h2>${esc(t.name)}</h2><div class="hint">موادك: ${esc((t.subjects||[]).join('، '))}</div></div>`, any=false;
+  const w=W[weekId];
+  let html=`<div class="panel"><h2>${esc(t.name)}</h2><div class="hint">${esc(wLabel(weekId))} · موادك: ${esc((t.subjects||[]).join('، '))}</div></div>`, any=false;
   DAYS.forEach((dn,d)=>{
+    if(w.days[d].off)return;
     const n=(cfg.dayPeriods||DEF.dayPeriods)[d]||7; let items='';
     for(let p=1;p<=n;p++){ if(!canEditCell(d,p))continue; any=true; const v=cells[key(d,p)]||{};
-      items+=`<div class="card"><div><div class="meta">الحصة ${PER[p-1]} – ${esc(v.subject)}</div>
+      items+=`<div class="card"><div><div class="meta">الحصة ${PER[p-1]} – ${esc(subjectOf(key(d,p)))}</div>
         <div class="val" dir="auto"><b>الدرس:</b> ${v.lesson?esc(v.lesson):'<span class="empty">لم يُدخل بعد</span>'}</div>
         <div class="val" dir="auto"><b>الواجب:</b> ${v.homework?esc(v.homework):'<span class="empty">لا يوجد</span>'}</div></div>
         <button class="btn primary" data-e="${d},${p}">إدخال</button></div>`;}
-    if(items)html+=`<div class="day-group"><h3>${dn} ${esc((cfg.dates||[])[d]||'')}</h3>${items}</div>`;
+    if(items)html+=`<div class="day-group"><h3>${dn} ${esc(w.days[d].h)}</h3>${items}</div>`;
   });
-  if(!any)html+='<p class="msg">لا توجد حصص لموادك في جدول هذا الأسبوع.</p>';
+  if(!any)html+='<p class="msg">لا توجد حصص لموادك في هذا الأسبوع.</p>';
   el.innerHTML=html;
   el.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const [d,p]=b.dataset.e.split(',').map(Number);openCell(d,p)});
 }
@@ -405,7 +450,7 @@ function renderLog(){
   const df=(a,b)=>a===b?`<span dir="auto">${esc(b)||'—'}</span>`:`${a?`<del dir="auto">${esc(a)}</del> ← `:''}<ins dir="auto">${esc(b)||'(حُذف)'}</ins>`;
   $('logList').innerHTML=logs.length?logs.map(l=>`<div class="card log-item ${l.seen?'':'unseen'}">
     <div><div><b>${esc(l.teacherName||'معلمة')}</b> — ${esc(l.kind)} ${esc(l.subject)} · ${DAYS[l.day]||''} الحصة ${PER[(l.period||1)-1]}</div>
-    <div class="meta">${fmt(l.at)}</div>
+    <div class="meta">${esc(wLabel(l.week))} · ${fmt(l.at)}</div>
     <div class="diff"><b>الدرس:</b> ${df(l.oldLesson,l.newLesson)}</div>
     <div class="diff"><b>الواجب:</b> ${df(l.oldHw,l.newHw)}</div></div>
     ${l.seen?'':`<button class="btn" data-s="${esc(l.id)}">اطّلعت</button>`}</div>`).join('')
@@ -415,28 +460,25 @@ function renderLog(){
 }
 $('btnSeenAll').onclick=async()=>{
   const un=logs.filter(l=>!l.seen); if(!un.length)return; $('btnSeenAll').disabled=true;
-  try{await api('seen',{ids:un.map(l=>l.id)});await refresh()}catch(e){toast('تعذّر التحديث')}
-  $('btnSeenAll').disabled=false; toast('تم');
+  try{await api('seen',{ids:un.map(l=>l.id)});await refresh();toast('تم')}catch(e){toast('تعذّر التحديث')}
+  $('btnSeenAll').disabled=false;
 };
 
 /* ---------- Settings ---------- */
-const CF=['weekName','grade','from','to','weeklyValue','kingdom','ministry','directorate','school','vision','mission','values','leader','deputy','principal'];
+const HF=['kingdom','ministry','directorate','school','vision','mission','values','leader','deputy','principal'];
 let tDraft=null;
 function fillSettings(){
-  CF.forEach(f=>{const e=$('s_'+f); if(e&&document.activeElement!==e)e.value=cfg[f]||''});
-  $('dayDates').innerHTML=DAYS.map((d,i)=>`<label class="f">${d}: التاريخ / عدد الحصص
-    <input data-date="${i}" value="${esc((cfg.dates||[])[i]||'')}" placeholder="مثال: ٤/١٦">
-    <input data-np="${i}" type="number" min="1" max="8" value="${(cfg.dayPeriods||DEF.dayPeriods)[i]||7}"></label>`).join('');
-  if(!tDraft)tDraft=JSON.parse(JSON.stringify(teachers));
-  renderTeachers();
+  [...HF,'grade'].forEach(f=>{const e=$('s_'+f); if(e)e.value=cfg[f]||''});
+  $('dayPer').innerHTML=DAYS.map((d,i)=>`<label class="f">عدد حصص ${d}<input data-np="${i}" type="number" min="1" max="8" value="${(cfg.dayPeriods||DEF.dayPeriods)[i]||7}"></label>`).join('');
+  tDraft=JSON.parse(JSON.stringify(teachers)); renderTeachers();
 }
-function allSubjects(){const s=new Set();Object.values(cells).forEach(c=>{const n=norm(c.subject);if(n)s.add(n)});tDraft.forEach(t=>(t.subjects||[]).forEach(x=>s.add(norm(x))));return [...s]}
+function allSubjects(){const s=new Set();Object.values(timetable).forEach(x=>{if(norm(x))s.add(norm(x))});tDraft.forEach(t=>(t.subjects||[]).forEach(x=>s.add(norm(x))));return [...s]}
 function renderTeachers(){
   const subs=allSubjects();
-  $('teacherList').innerHTML=tDraft.map((t,i)=>{return `<div class="t-row">
+  $('teacherList').innerHTML=tDraft.map((t,i)=>`<div class="t-row">
     <label class="f">اسم المعلمة<input data-tn="${i}" value="${esc(t.name)}"></label>
     <div class="chips">${subs.map(s=>`<label><input type="checkbox" data-ts="${i}" value="${esc(s)}" ${(t.subjects||[]).map(norm).includes(s)?'checked':''}>${esc(s)}</label>`).join('')}</div>
-    <button class="btn danger" data-td="${i}">حذف</button></div>`}).join('');
+    <button class="btn danger" data-td="${i}">حذف</button></div>`).join('');
   $('teacherList').querySelectorAll('[data-tn]').forEach(e=>e.oninput=()=>tDraft[e.dataset.tn].name=e.value);
   $('teacherList').querySelectorAll('[data-ts]').forEach(e=>e.onchange=()=>{const t=tDraft[e.dataset.ts];const set=new Set((t.subjects||[]).map(norm));e.checked?set.add(e.value):set.delete(e.value);t.subjects=[...set]});
   $('teacherList').querySelectorAll('[data-td]').forEach(e=>e.onclick=()=>{tDraft.splice(+e.dataset.td,1);renderTeachers()});
@@ -444,37 +486,20 @@ function renderTeachers(){
 $('btnAddTeacher').onclick=()=>{tDraft.push({key:'t'+Date.now().toString(36),name:'',subjects:[]});renderTeachers()};
 $('btnSaveTeachers').onclick=async()=>{
   const list=tDraft.filter(t=>norm(t.name)).map(t=>({key:t.key,name:norm(t.name),subjects:(t.subjects||[]).map(norm)}));
-  try{await api('set',{key:'teachers',data:{list}});teachers=list;tDraft=null;fillSettings();toast('تم حفظ المعلمات ✓')}catch(e){toast('تعذّر الحفظ')}
+  try{await api('set',{key:'teachers',data:{list}});await refresh();fillSettings();toast('تم حفظ المعلمات ✓')}catch(e){toast('تعذّر الحفظ')}
 };
 async function saveCfg(patch){
-  const next={...cfg,...patch};
-  try{await api('set',{key:'main',data:next});cfg=next;renderAll();toast('تم الحفظ ✓')}catch(e){toast('تعذّر الحفظ')}
+  try{await api('set',{key:'main',data:{...cfg,...patch}});await refresh();toast('تم الحفظ ✓')}catch(e){toast('تعذّر الحفظ')}
 }
-$('btnSaveWeek').onclick=()=>{
-  const p={};['weekName','grade','from','to','weeklyValue'].forEach(f=>p[f]=$('s_'+f).value.trim());
-  p.dates=DAYS.map((_,i)=>document.querySelector(`[data-date="${i}"]`).value.trim());
-  p.dayPeriods=DAYS.map((_,i)=>Math.max(1,Math.min(8,+document.querySelector(`[data-np="${i}"]`).value||7)));
-  saveCfg(p);
-};
-$('btnSaveHead').onclick=()=>{const p={};['kingdom','ministry','directorate','school','vision','mission','values','leader','deputy','principal'].forEach(f=>p[f]=$('s_'+f).value.trim());saveCfg(p)};
+$('btnSaveGrade').onclick=()=>saveCfg({grade:$('s_grade').value.trim(),dayPeriods:DAYS.map((_,i)=>Math.max(1,Math.min(8,+document.querySelector(`[data-np="${i}"]`).value||7)))});
+$('btnSaveHead').onclick=()=>{const p={};HF.forEach(f=>p[f]=$('s_'+f).value.trim());saveCfg(p)};
+$('btnResetLogos').onclick=()=>saveCfg({logoRight:'',logoLeft:''});
 function readLogo(input,field){input.onchange=()=>{const f=input.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,220/Math.max(img.width,img.height));const c=document.createElement('canvas');
+  r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,240/Math.max(img.width,img.height));const c=document.createElement('canvas');
     c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);saveCfg({[field]:c.toDataURL('image/png')})};img.src=r.result};r.readAsDataURL(f)}}
 readLogo($('logoRight'),'logoRight');readLogo($('logoLeft'),'logoLeft');
-$('btnNewWeek').onclick=async()=>{
-  if(!(await ask('سيتم حفظ الخطة الحالية في الأرشيف وتفريغ كل الدروس والواجبات. متابعة؟')))return;
-  $('btnNewWeek').disabled=true;
-  try{
-    await api('set',{key:'archive/'+Date.now(),data:{cfg,cells,at:Date.now()}});
-    for(const [k,v] of Object.entries(cells)){ if(v.lesson||v.homework){ await api('set',{key:'cell/'+k,data:{...v,lesson:'',homework:'',updatedAt:Date.now()}}); } }
-    const un2=logs.filter(l=>!l.seen).map(l=>l.id);if(un2.length)await api('seen',{ids:un2});await refresh();
-    await refresh();toast('بدأ أسبوع جديد، حدّثي التاريخ واسم الأسبوع');
-  }catch(e){toast('تعذّر إكمال العملية')}
-  $('btnNewWeek').disabled=false;
-};
 
 /* ---------- Export ---------- */
-function fileName(){return `خطة الأسبوع ${cfg.weekName||''} - الصف ${cfg.grade||''}.pdf`.replace(/\s+/g,' ')}
 $('btnPdf').onclick=async()=>{
   const b=$('btnPdf'); b.disabled=true; b.textContent='جارٍ التجهيز…';
   try{
@@ -485,28 +510,26 @@ $('btnPdf').onclick=async()=>{
     const {jsPDF}=window.jspdf; const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
     let w=210,h=canvas.height*w/canvas.width; if(h>297){h=297;w=canvas.width*h/canvas.height}
     pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',(210-w)/2,0,w,h);
-        pdf.save(fileName()); toast('تم تجهيز الملف ✓')
-  }catch(e){ toast('تعذّر إنشاء الملف') }
+    pdf.save(`خطة الأسبوع ${W[weekId].name} - ${SEMN[W[weekId].sem]} - الصف ${cfg.grade||''}.pdf`);
+    toast('تم تجهيز الملف ✓');
+  }catch(e){toast('تعذّر إنشاء الملف')}
   b.disabled=false; b.textContent='تحميل PDF';
 };
-$('btnPrint').onclick=()=>{try{window.print()}catch(e){toast('الطباعة غير متاحة هنا، استخدمي «تحميل PDF»')}};
+$('btnPrint').onclick=()=>window.print();
 
 /* ---------- Views ---------- */
 function setView(v){view=v;document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v));
   ['plan','mine','log','settings'].forEach(x=>$('view-'+x).classList.toggle('hidden',x!==v));
-  if(v==='settings'){tDraft=null;fillSettings()} renderAll(); if(v==='plan')requestAnimationFrame(fitSheet)}
+  if(v==='settings')fillSettings(); renderAll();}
 $('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)setView(t.dataset.v)});
 function renderAll(){
-  if(!loaded.cfg||!loaded.cells||(!me.isOwner&&!me.teacherKey))return;
+  if(!loaded||(!me.isOwner&&!me.teacherKey))return;
   $('loading').classList.add('hidden');
-  const t=myTeacher();
-  $('roleTag').textContent=me.isOwner?'المشرفة':t?t.name:'معلمة';
-  renderSheet(); renderMine(); renderLog();
+  const t=myTeacher(); $('roleTag').textContent=me.isOwner?'المشرفة':t?t.name:'معلمة';
+  renderWeekBar(); renderSheet(); renderMine(); renderLog();
 }
 
-/* ---------- Boot ---------- */
-const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-let started=false;
+/* ---------- Gate / Boot ---------- */
 function showGate(step){
   $('gate').classList.remove('hidden');$('loading').classList.add('hidden');
   ['plan','mine','log','settings'].forEach(x=>$('view-'+x).classList.add('hidden'));
@@ -515,30 +538,37 @@ function showGate(step){
   if(step==='who')renderWho();
 }
 function renderWho(){
-  $('whoList').innerHTML=`<button data-w="owner"><b>المشرفة</b><small>متابعة الخطة وكل التعديلات</small></button>`+
-    teachers.map(t=>`<button data-w="${esc(t.key)}"><b>${esc(t.name)}</b><small>${esc((t.subjects||[]).join('، '))}</small></button>`).join('');
+  $('whoList').innerHTML=teachers.map(t=>`<button data-w="${esc(t.key)}"><b>${esc(t.name)}</b><small>${esc((t.subjects||[]).join('، '))}</small></button>`).join('');
   $('whoList').querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{store.set('wp_who',b.dataset.w);enter(b.dataset.w)});
+}
+async function seedIfEmpty(d){
+  if(d.role!=='owner')return;
+  let changed=false;
+  if(!d.teachers){await api('set',{key:'teachers',data:SEED.teachers});changed=true}
+  if(!d.timetable||!Object.keys(d.timetable).length){
+    await api('set',{key:'timetable',data:SEED.timetable});
+    if(d.weekId===SEED.week.id&&!Object.keys(d.cells||{}).length){
+      for(const [k,v] of Object.entries(SEED.cells))await api('set',{key:`cell/${SEED.week.id}/${k}`,data:v});
+    }
+    changed=true;
+  }
+  if(!d.week&&d.weekId===SEED.week.id){await api('set',{key:'week/'+SEED.week.id,data:{value:SEED.week.value}});changed=true}
+  if(!d.main||!d.main.activeWeek){await api('set',{key:'main',data:{...SEED.main,...(d.main||{}),activeWeek:(d.main&&d.main.activeWeek)||SEED.main.activeWeek}});changed=true}
+  if(changed)await load();
 }
 $('pwGo').onclick=async()=>{
   PASS=$('pw').value.trim(); $('pwGo').disabled=true; $('pwErr').textContent='';
-  try{const d=await load();await seedIfEmpty(d);store.set('wp_pass',PASS);showGate('who')}
+  try{const d=await load();await seedIfEmpty(d);store.set('wp_pass',PASS);if(ROLE==='owner'){store.set('wp_who','owner');enter('owner')}else showGate('who')}
   catch(e){$('pwErr').textContent=e.pass?'كلمة المرور غير صحيحة':'تعذّر الاتصال، حاولي مرة أخرى'}
   $('pwGo').disabled=false;
 };
 $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('pwGo').click()});
-$('btnSwitch').onclick=()=>{store.del('wp_who');location.reload()};
+$('btnSwitch').onclick=()=>{store.del('wp_who');store.del('wp_pass');location.reload()};
 function enter(who){
-  me.isOwner=who==='owner'; me.teacherKey=me.isOwner?null:who;
+  me.isOwner=who==='owner'; me.teacherKey=me.isOwner?null:who; viewWeek=null;
   $('gate').classList.add('hidden');$('btnSwitch').classList.remove('hidden');
   $('tabLog').classList.toggle('hidden',!me.isOwner);$('tabSettings').classList.toggle('hidden',!me.isOwner);
   setView(me.isOwner?'plan':'mine'); refresh();
-}
-async function seedIfEmpty(d){
-  if(d.main)return;
-  for(const [k,v] of Object.entries(SEED.cells))await api('set',{key:'cell/'+k,data:v});
-  await api('set',{key:'teachers',data:SEED.teachers});
-  await api('set',{key:'main',data:SEED.main});
-  await load();
 }
 async function boot(){
   PASS=store.get('wp_pass')||'';
@@ -547,8 +577,10 @@ async function boot(){
   try{const d=await load();await seedIfEmpty(d)}
   catch(e){if(e.pass){store.del('wp_pass');return showGate('pass')} $('loading').textContent='تعذّر الاتصال بالخادم، حدّثي الصفحة.';return}
   const who=store.get('wp_who');
-  if(who&&(who==='owner'||teachers.some(t=>t.key===who)))enter(who); else showGate('who');
-  setInterval(()=>{if(!document.hidden&&(me.isOwner||me.teacherKey))refresh()},10000);
+  if(ROLE==='owner')enter('owner');
+  else if(who&&who!=='owner'&&teachers.some(t=>t.key===who))enter(who);
+  else showGate('who');
+  setInterval(()=>{if(!document.hidden&&!$('cellDlg').open&&(me.isOwner||me.teacherKey))refresh()},10000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 }
 boot();
